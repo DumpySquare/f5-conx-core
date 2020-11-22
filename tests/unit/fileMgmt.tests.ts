@@ -31,6 +31,11 @@ describe('file upload/download tests - ipv6', function () {
     const tmp = path.join(__dirname, '..', 'tmp', rpm)
     const filePath = path.join(__dirname, '..', 'artifacts', rpm)
 
+    if (!fs.existsSync(tmp)){
+        console.log('creating temp directory for file upload/download tests')
+        fs.mkdirSync(tmp);
+    }
+
     beforeEach(function () {
         f5Client = getF5Client({ ipv6: true });
     });

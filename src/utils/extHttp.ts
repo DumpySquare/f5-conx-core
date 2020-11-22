@@ -39,7 +39,7 @@ export async function makeRequest(host: string, uri: string, options?: {
 
     logger.debug(`Making HTTP request: ${host} ${uri} ${miscUtils.stringify(options)}`);
 
-    const httpResponse = await axios.request<Response>({
+    const httpResponse = await axios({
         httpsAgent: new https.Agent({
             rejectUnauthorized: false
         }),
