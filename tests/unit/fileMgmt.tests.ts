@@ -22,29 +22,55 @@ import path from 'path';
 import { AuthTokenReqBody } from '../../src/models';
 
 
+let f5Client: F5Client;
+
+// test file name
+const rpm = 'f5-appsvcs-templates-1.4.0-1.noarch.rpm';
+// source file with path
+const filePath = path.join(__dirname, '..', 'artifacts', rpm)
+// tmp directory
+const tmpDir = path.join(__dirname, '..', 'tmp')
+// destination test path with file name
+const tmp = path.join(tmpDir, rpm)
 
 describe('file upload/download tests - ipv6', function () {
-    let f5Client: F5Client;
 
+    // runs once before the first test in this block
+    before(function () {
+        if (!fs.existsSync(tmpDir)) {
+            // console.log('creating temp directory for file upload/download tests')
+            fs.mkdirSync(tmpDir);
+        }
+    });
 
-    const rpm = 'f5-appsvcs-templates-1.4.0-1.noarch.rpm';
-    const tmp = path.join(__dirname, '..', 'tmp', rpm)
-    const filePath = path.join(__dirname, '..', 'artifacts', rpm)
-
-    if (!fs.existsSync(tmp)){
-        console.log('creating temp directory for file upload/download tests')
-        fs.mkdirSync(tmp);
-    }
+    // runs once after the last test in this block
+    after(function () {
+        // if the tmp directory exits, try to delete it
+        //  - should be empty, each test should clean up files as needed
+        if (fs.existsSync(tmpDir)) {
+            try {
+                // console.log('deleting temp directory for file upload/download tests')
+                fs.rmdirSync(tmpDir);
+            } catch (e) {
+                console.log('was unable to delete tmp folder for upload/download tests, this typically means there are files in it that one of the tests did not clean up', e)
+            }
+        }
+    });
 
     beforeEach(function () {
+        // refresh the device client class
         f5Client = getF5Client({ ipv6: true });
     });
+
     afterEach(function () {
+        // Alert if all our nocks didn't get used, and clear them out
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`)
         }
         nock.cleanAll();
     });
+
+
 
     it('download file from F5', async function () {
         nock(`https://${ipv6Host}`)
@@ -64,17 +90,19 @@ describe('file upload/download tests - ipv6', function () {
     });
 
 
-    it('upload file to ', async function () {
+    it('upload file to F5', async function () {
         nock(`https://${ipv6Host}`)
             .post('/mgmt/shared/authn/login')
             .reply(200, (uri, reqBody: AuthTokenReqBody) => {
                 return getFakeToken(reqBody.username, reqBody.loginProviderName);
             })
+            // tell the nocks to persist for this test, the following post will get called several times
+            //  for all the pieces of the file
             .persist()
 
             // so the following just tests that the url was POST'd to, not the file contents
-            //  but since the function returns the filename and file size, those should confirm
-            //  that everthing completed
+            //  but since the function returns the filename and file size as part of the upload process
+            //  those should confirm that everthing completed
             .post(`/mgmt/shared/file-transfer/uploads/${rpm}`)
             .reply(200, { foo: 'bar' });
 

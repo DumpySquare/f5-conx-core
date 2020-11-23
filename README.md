@@ -1,24 +1,42 @@
 # Introduction
 
-The F5 SDK (JS) provides client libraries to access various F5 products and services. It focuses primarily on facilitating consuming our most popular APIs and services, currently including BIG-IP (via Automation Tool Chain) and F5 Cloud Services.
+The f5-conx-core, is a project intended to support all the basic connectivity with F5 productions within the JavaScript/TypeScript(JS/TS) language eccosystem.
 
-Benefits:
+This includes fully abstracting underlying connectivity authentication, information gathering and (A)utomated (T)ool (C)hain management.
 
-- Provides hand-written or auto-generated client code to make F5’s APIs/services simple and intuitive to use.
-- Handles the low-level details of communication with the API or service, including authentication sessions, async task handling, protocol handling, large file uploads, and more.
-- Can be installed using familiar package management tools such as npm.
+- Manage connectivity with F5 products, including:
+  - BIG-IP, BIG-IQ and iHealth
+  - Future plans of supporting:
+    - Beacon?
+    - nginx?
+  - upload/download files including:
+    - generating ucs/qkviews
+    - installation of ATC services
+  - ATC Service management, includugin:
+    - download/upload of ATC ILX RPM packages
+    - install/uninstall of ATC ILX RPM packages
+  - ATC interaction including
+    - GET/POST/PATCH/DELETE of all ATC services
+- Network transport support for IPv4 and IPv6
+- Network connectivity statistics including:
+  - Time it took for dns to resolve
+  - Time it took to connect to tcp socket
+  - Time it took to negotiate SSL
+  - When request was made
+  - When the first byte was recieved
+  - and when everything completed
 
 ## Table of Contents
 
 - [Usage](#usage)
-- [Ben-Work](#ben-work)
-- [Phase 2](#phase2)
+- [New-Work](#new-work)
+- [New Work Phase 2](#new-word-phase-2)
 - [User Documentation](#user-documentation)
 
 
 ---
 
-## Ben Work
+## New Work
 
 The high level goal here is to make an HTTP client that supports everything we need to take our tools to the next level.
 
@@ -115,7 +133,7 @@ Using these timings we can log and provide stats about what devices (mainly f5) 
 
 ---
 
-## Phasse 2
+## New Work Phase 2
 
 Is to really take a step back and outline the different workflows we intent to support and architecte those functions accordingly
 
@@ -124,16 +142,16 @@ I like the idea of having a main parent class that represends the core of connec
 > nginx is gonna need to be included at some point.  It probably makes sense to make a nginx mgmt class with its respective details and connectivity
 
 Information like:
-- device(ip/host)/port/username/password/provider
+- device(ip/host)/port/username/password/provider(done)
 
 Then discover information about the device
-- bigip/bigiq (even nginx?)
-- host info (platform, tmos version, license information)
-- installed ATC services
-- ATC service metadata (stuff from the CDN (or local cache), verion info, download links general endpoints)
+- bigip/bigiq (even nginx?)(done)
+- host info (platform, tmos version, license information)(done)
+- installed ATC services(done)
+- ATC service metadata (stuff from the CDN (or local cache), verion info, download links general endpoints)(started)
 
 And provide basic manipulation:
-- upload/download files
+- upload/download files(done)
 - generate/download ucs/qkviews
 - ATC RPM get/put and service install/uninstall
 - ATC service interaction
@@ -154,6 +172,10 @@ https://stackoverflow.com/questions/6885404/javascript-override-methods
 https://medium.com/javascript-scene/master-the-javascript-interview-what-s-the-difference-between-class-prototypal-inheritance-e4cd0a7562e9
 
 I see a way to have the parent mgmtClient class, then add on additional classes within to provide the different bolt on funtionality
+
+If you made it this far...  Ended up wrapping all the classes in a top level f5Device class that includes the f5mgmt class for all connectivity, if different ATC services are discovered running on the device, then classes for each respective service are instantiated with the mgmt class for connectivity details and attached to the parent f5Device class.
+
+This provide a single object for connecting to and managing a single device.  If tools need to be able to manage connectivity between multiple devices, each device gets it's own class and everything is in a nice package
 
 ---
 
