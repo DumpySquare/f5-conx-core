@@ -12,23 +12,23 @@
 
 import assert from 'assert';
 import nock from 'nock';
-import { F5Client } from '../../src/bigip/f5Client';
+import { F5Client } from '../src/bigip/f5Client';
 import { 
     as3InfoApiReponse, 
     deviceInfo, 
     doInfoApiReponse, 
     fastInfoApiResponse 
-} from '../artifacts/f5_device_atc_infos';
+} from './artifacts/f5_device_atc_infos';
 
 import { 
     getF5Client,
     ipv6Host 
-} from './bigip/fixtureUtils';
+} from './fixtureUtils';
 // import { requestNew } from '../../src/utils/http_new'
 // import { makeRequest } from '../../src/utils/http';
-import { getFakeToken } from './bigip/fixtureUtils';
-import localAtcMetadata from '../../src/bigip/atc_metadata.json';
-import { AuthTokenReqBody } from '../../src/models';
+import { getFakeToken } from './fixtureUtils';
+import localAtcMetadata from '../src/bigip/atc_metadata.json';
+import { AuthTokenReqBody } from '../src/models';
 
 
 
@@ -58,8 +58,8 @@ describe('http client tests - ipv6', function () {
             .reply(200, { foo: 'bar' });
 
         
-        const response = await f5Client.https('/foo');
-        assert.deepStrictEqual(response.data, { foo: 'bar' })
+        const resp = await f5Client.https('/foo');
+        assert.deepStrictEqual(resp.data, { foo: 'bar' })
         await f5Client.clearLogin();
     });
 
@@ -84,8 +84,8 @@ describe('http client tests - ipv6', function () {
             }
         )
 
-        const response = await f5Client.https('/foo');
-        assert.deepStrictEqual(response.data, { foo: 'bar' })
+        const resp = await f5Client.https('/foo');
+        assert.deepStrictEqual(resp.data, { foo: 'bar' })
         await f5Client.clearLogin();
     });
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
@@ -11,8 +12,8 @@
 
 'use strict';
 
-import * as f5Https from '../utils/f5Http';
-import { HttpResponse, Token } from '../models'
+import * as f5Https from '../utils/f5Https';
+import { F5HttpRequest, HttpResponse, Token } from '../models'
 import { Method } from 'axios';
 
 
@@ -76,12 +77,12 @@ export class ManagementClient {
      * clear auth token and timer
      *  - used for logging out/disconnecting, and testing
      */
-    async clearToken (): Promise<void> {
+    async clearToken(): Promise<void> {
         clearInterval(this._tokenIntervalId);
         return this._token = undefined;
     }
 
-   
+
 
 
     /**
@@ -92,11 +93,10 @@ export class ManagementClient {
         // logger.debug('getting auth token from: ', `${this.host}:${this.port}`);
 
         const resp = await f5Https.makeRequest(
-            this.host,
-            '/mgmt/shared/authn/login',
             {
+                baseURL: `https://${this.host}:${this.port}`,
+                url: '/mgmt/shared/authn/login',
                 method: 'POST',
-                port: this.port,
                 data: {
                     username: this._user,
                     password: this._password,
@@ -131,7 +131,7 @@ export class ManagementClient {
                 this._token = undefined; // clearing token details should get a new token
                 console.log('authToken expired', this._tokenTimeout);
             }
-        // run timer a little fast to pre-empt update
+            // run timer a little fast to pre-empt update
         }, 999);
     }
 
@@ -153,11 +153,11 @@ export class ManagementClient {
         contentType?: string;
         responseType?: string;
         advancedReturn?: boolean;
-    }): Promise<HttpResponse> {
+    }) {
         // options = options || {};
 
         // if auth token has expired, it should have been cleared, get new one
-        if(!this._token){
+        if (!this._token) {
             await this.getToken();
         }
 
@@ -165,13 +165,13 @@ export class ManagementClient {
         // be able to clear the token if it expires before timer
 
         return await f5Https.makeRequest(
-            this.host,
-            uri,
             {
+                baseURL: `https://${this.host}:${this.port}`,
+                url: uri,
                 method: options?.method || undefined,
-                port: this.port,
+                // port: this.port,
                 headers: Object.assign(options?.headers || {}, {
-                    'X-F5-Auth-Token': this._token
+                    'X-F5-Auth-Token': this._token.token
                 }),
                 data: options?.data || undefined,
                 advancedReturn: options?.advancedReturn || false
@@ -190,21 +190,30 @@ export class ManagementClient {
      * @param fileName file name on bigip
      * @param localDestPathFile where to put the file (including file name)
      */
-    async download(fileName: string, localDestPath: string): Promise<HttpResponse> {
+    async download(fileName: string, localDestPath: string) {
 
         // if auth token has expired, it should have been cleared, get new one
-        if(!this._token){
+        if (!this._token) {
             await this.getToken();
         }
-
-        return await f5Https.downloadToFile(
-            `https://${this.host}:${this.port}/mgmt/cm/autodeploy/software-image-downloads/${fileName}`,
-            localDestPath, {
-                headers:  {
-                    'X-F5-Auth-Token': this._token
+        return await f5Https.downloadToFile(localDestPath, {
+                baseURL: `https://${this.host}:${this.port}`,
+                url: `/mgmt/cm/autodeploy/software-image-downloads/${fileName}`,
+                headers: {
+                    'X-F5-Auth-Token': this._token.token
                 },
-            }
-            )
+                responseType: 'stream'
+        })
+        
+        // return await f5Https.downloadToFile(fileName, localDestPath, this.host, this.port, this._token.token)
+        // return await f5Https.downloadToFile(
+        //     `https://${this.host}:${this.port}/mgmt/cm/autodeploy/software-image-downloads/${fileName}`,
+        //     localDestPath, {
+        //     headers: {
+        //         'X-F5-Auth-Token': this._token
+        //     },
+        // }
+        // )
     }
 
 
@@ -220,10 +229,10 @@ export class ManagementClient {
      * @param fileName file name on bigip
      * @param localDestPathFile where to put the file (including file name)
      */
-    async upload(localSourcePathFilename: string): Promise<HttpResponse> {
+    async upload(localSourcePathFilename: string) {
 
         // if auth token has expired, it should have been cleared, get new one
-        if(!this._token){
+        if (!this._token) {
             await this.getToken();
         }
 

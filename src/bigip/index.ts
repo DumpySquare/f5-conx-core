@@ -10,6 +10,6 @@
 
 import * as _extension from './extension';
 
-export { ManagementClient } from './managementClient';
+export { ManagementClient } from './mgmtClient';
 
 export const extension = _extension;

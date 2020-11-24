@@ -6,9 +6,9 @@
  * the software product on devcentral.f5.com.
  */
 
-import { ManagementClient } from '../../../src/bigip';
-import { F5Client } from '../../../src/bigip/f5Client';
-import { Token } from '../../../src/models';
+import { ManagementClient } from '../src/bigip';
+import { F5Client } from '../src/bigip/f5Client';
+import { Token } from '../src/models';
 
 export const defaultHost = '192.0.2.1';
 export const defaultPort = 443;

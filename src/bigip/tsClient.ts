@@ -10,7 +10,7 @@
 'use strict';
 
 import { TsMetaData, AtcInfo } from "../models";
-import { ManagementClient } from "./managementClient";
+import { ManagementClient } from "./mgmtClient";
 
 export class TsClient {
     protected _mgmtClient: ManagementClient;

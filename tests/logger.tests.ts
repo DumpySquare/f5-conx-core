@@ -10,7 +10,7 @@
 
 import sinon from 'sinon';
 
-import Logger from '../../src/logger';
+import Logger from '../src/logger';
 import assert from 'assert';
 
 describe('Logger', function() {

@@ -10,7 +10,7 @@
 'use strict';
 
 import { CfMetaData, AtcInfo } from "../models";
-import { ManagementClient } from "./managementClient";
+import { ManagementClient } from "./mgmtClient";
 
 
 export class CfClient {

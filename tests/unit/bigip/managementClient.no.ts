@@ -13,7 +13,7 @@ import nock from 'nock';
 import { ManagementClient } from '../../../src/bigip';
 import { AuthTokenReqBody } from '../../../src/models';
 
-import { getManagementClient, defaultHost, getFakeToken } from './fixtureUtils';
+import { getManagementClient, defaultHost, getFakeToken } from '../../fixtureUtils';
 
 
 describe('BIG-IP: Management Client', function () {
@@ -28,14 +28,6 @@ describe('BIG-IP: Management Client', function () {
         }
         nock.cleanAll();
     });
-
-    // it('should login', async function() {
-    //     nock(`https://${defaultHost}`)
-    //         .post('/mgmt/shared/authn/login')
-    //         .reply(200, { token: { 'token': '1234' } });
-
-    //     await mgmtClient.login();
-    // });
 
     it('should make request', async function () {
         nock(`https://${defaultHost}`)

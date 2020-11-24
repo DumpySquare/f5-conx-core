@@ -17,7 +17,7 @@ import { Method } from "axios";
 import { HttpResponse, AtcMetaData, AtcInfo } from "../models";
 // import { discoverBigip } from "./discover";
 import { MetadataClient } from "./extension/metadata";
-import { ManagementClient } from "./managementClient";
+import { ManagementClient } from "./mgmtClient";
 
 import localAtcMetadata from './atc_metadata.json';
 import { FastClient } from "./fastClient";
@@ -188,9 +188,13 @@ export class F5Client {
             mini?: boolean;
         }): Promise<object> {
 
+        // tmsh save sys ucs /var/tmp/backup_${HOSTNAME}_`date +%Y%m%d-%H%M%S`.ucs
+        // nice -n 19 qkview -s0
         // K13132: Backing up and restoring BIG-IP configuration files with a UCS archive
         // https://support.f5.com/csp/article/K13132
         // tmsh save sys ucs $(echo $HOSTNAME | cut -d'.' -f1)-$(date +%H%M-%m%d%y)
+
+
 
         return {
             localDestPathFileName: '/path/file.ucs',

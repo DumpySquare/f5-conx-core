@@ -12,28 +12,30 @@
 
 import assert from 'assert';
 import nock from 'nock';
-import { F5Client } from '../../src/bigip/f5Client';
 import * as fs from 'fs';
-
-
-import { getF5Client, ipv6Host } from './bigip/fixtureUtils';
-import { getFakeToken } from './bigip/fixtureUtils';
 import path from 'path';
-import { AuthTokenReqBody } from '../../src/models';
 
 
-let f5Client: F5Client;
+// import { F5Client } from '../src/bigip/f5Client';
+import { getF5Client, ipv6Host } from './fixtureUtils';
+import * as f5Https from '../src/utils/f5Https';
+import { debug } from 'console';
+// import { getFakeToken } from './fixtureUtils';
+// import { AuthTokenReqBody } from '../src/models';
+
+
+// let f5Client: F5Client;
 
 // test file name
 const rpm = 'f5-appsvcs-templates-1.4.0-1.noarch.rpm';
 // source file with path
-const filePath = path.join(__dirname, '..', 'artifacts', rpm)
+const filePath = path.join(__dirname, 'artifacts', rpm)
 // tmp directory
-const tmpDir = path.join(__dirname, '..', 'tmp')
+const tmpDir = path.join(__dirname, 'tmp')
 // destination test path with file name
 const tmp = path.join(tmpDir, rpm)
 
-describe('file upload/download tests - ipv6', function () {
+describe('Core f5Https unit testing', function () {
 
     // runs once before the first test in this block
     before(function () {
@@ -57,45 +59,55 @@ describe('file upload/download tests - ipv6', function () {
         }
     });
 
-    beforeEach(function () {
-        // refresh the device client class
-        f5Client = getF5Client({ ipv6: true });
-    });
+    // beforeEach(function () {
+    //     // refresh the device client class
+    //     f5Client = getF5Client({ ipv6: true });
+    // });
 
-    afterEach(function () {
+    afterEach(async function () {
         // Alert if all our nocks didn't get used, and clear them out
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`)
         }
         nock.cleanAll();
+
     });
 
 
 
-    it('download file from F5', async function () {
+    it('makeRequest simple GET', async function () {
         nock(`https://${ipv6Host}`)
-            .post('/mgmt/shared/authn/login')
-            .reply(200, (uri, reqBody: AuthTokenReqBody) => {
-                return getFakeToken(reqBody.username, reqBody.loginProviderName);
-            })
-            .get(`/mgmt/cm/autodeploy/software-image-downloads/${rpm}`)
+            .get('/foo')
+            .reply(200, { foo: 'bar' });
+
+        const resp = await f5Https.makeRequest({
+            baseURL: `https://${ipv6Host}`,
+            url: '/foo'
+        })
+        assert.deepStrictEqual(resp.data, { foo: 'bar' })
+    });
+
+
+
+    it('download file', async function () {
+        nock(`https://${ipv6Host}`)
+            .get(`/file/downloads/${rpm}`)
             .replyWithFile(200, filePath);
 
-        const resp = await f5Client.download(rpm, tmp);     // download file
+        const resp = await f5Https.downloadToFile(tmp, {
+            baseURL: `https://${ipv6Host}`,
+            url: `/file/downloads/${rpm}`,
+            responseType: 'stream'
+        });
 
-        assert.ok(fs.existsSync(resp.data.path))                // confirm/assert file is there
+        assert.ok(fs.existsSync(resp.data.path))    // confirm/assert file is there
 
-        fs.unlinkSync(resp.data.path);                          // remove tmp file
-        await f5Client.clearLogin();                            // clear auth token for next test
+        fs.unlinkSync(resp.data.path);              // remove tmp file
     });
 
 
-    it('upload file to F5', async function () {
-        nock(`https://${ipv6Host}`)
-            .post('/mgmt/shared/authn/login')
-            .reply(200, (uri, reqBody: AuthTokenReqBody) => {
-                return getFakeToken(reqBody.username, reqBody.loginProviderName);
-            })
+    it('upload file', async function () {
+        nock(`https://${ipv6Host}:443`)
             // tell the nocks to persist for this test, the following post will get called several times
             //  for all the pieces of the file
             .persist()
@@ -104,12 +116,11 @@ describe('file upload/download tests - ipv6', function () {
             //  but since the function returns the filename and file size as part of the upload process
             //  those should confirm that everthing completed
             .post(`/mgmt/shared/file-transfer/uploads/${rpm}`)
-            .reply(200, { foo: 'bar' });
+            .reply(200, { file: 'bar' });
 
-        const response = await f5Client.upload(filePath);
-        assert.deepStrictEqual(response.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
-        assert.ok(response.data.bytes);  // just asserting that we got a value here, should be a number
-        await f5Client.clearLogin();
+        const resp = await f5Https.uploadFile(filePath, ipv6Host, 443, 'testToken@!#$%');
+        assert.deepStrictEqual(resp.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
+        assert.ok(resp.data.bytes);  // just asserting that we got a value here, should be a number
     });
 
 });

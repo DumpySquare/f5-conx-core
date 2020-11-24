@@ -8,7 +8,8 @@
 
 'use strict';
 
-import * as httpUtils from '../../utils/f5Https';
+import assert from 'assert';
+import * as extHttp from '../../utils/extHttp';
 
 import localExtensionMetadata from './extension_metadata.json';
 
@@ -146,9 +147,9 @@ export class MetadataClient {
      * @returns void
      */
     async getLatestMetadata(): Promise<void> {
-        const parsedUrl = httpUtils.parseUrl(EXTENSION_METADATA.url);
+        const parsedUrl = extHttp.parseUrl(EXTENSION_METADATA.url);
         try {
-            const response = await httpUtils.makeRequest(parsedUrl.host, parsedUrl.path);
+            const response = await extHttp.makeRequest(parsedUrl.host, parsedUrl.path);
             this._metadata = response.data;
         } catch (e) {
             console.log(e);
@@ -216,3 +217,31 @@ export class MetadataClient {
         return this._getComponentMetadata()['versions'][this._componentVersion];
     }
 }
+
+// /////// the following doesn't seem to be used
+// /**
+//  * Parse URL
+//  *
+//  * @param url  url
+//  *
+//  * @returns parsed url properties
+//  */
+// export function parseUrl(url: string): {
+//     host: string;
+//     path: string;
+// } {
+//     // exmple of using the following URL interface for parsing URLs
+//     const b = new URL(url);
+//     const c = {
+//         host: b.host,
+//         path: b.pathname
+//     }
+
+//     const x = {
+//         host: url.split('://')[1].split('/')[0],
+//         path: `/${url.split('://')[1].split('/').slice(1).join('/')}`
+//     }
+
+//     assert.deepStrictEqual(x, c, 'should be equal');
+//     return x;
+// }

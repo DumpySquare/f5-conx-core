@@ -9,9 +9,9 @@
     ],
     "configurations": [
         {
+            "name": "Mocha All",
             "type": "node",
             "request": "launch",
-            "name": "Mocha All",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "args": [
                 "-r",
@@ -25,17 +25,16 @@
             "protocol": "inspector",
         },
         {
+            "name": "Mocha f5Https unit tests",
             "type": "node",
             "request": "launch",
-            "name": "Mocha MgmtClient tests",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "args": [
                 "-r",
                 "ts-node/register",
-                "--timeout",
-                "999999",
+                "--no-timeout",
                 "--colors",
-                "${workspaceFolder}/tests/unit/bigip/managementClientTests.ts",
+                "${workspaceFolder}/tests/f5Https.unit.tests.ts",
             ],
             "internalConsoleOptions": "neverOpen",
             "protocol": "inspector",
@@ -43,9 +42,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Mocha ipv6 tests",
-            "sourceMaps": true,
-            // "trace": true,
+            "name": "Mocha F5Device IPv6 integration tests",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "args": [
                 "-r",
@@ -53,7 +50,7 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}/tests/unit/ipv6.tests.ts",
+                "${workspaceFolder}/tests/ipv6.int.tests.ts",
             ],
             "internalConsoleOptions": "neverOpen",
             "protocol": "inspector",
@@ -61,9 +58,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Mocha file upload/download tests",
-            "sourceMaps": true,
-            // "trace": true,
+            "name": "Mocha F5Device file upload/download tests",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "args": [
                 "-r",
@@ -71,7 +66,7 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}/tests/unit/fileMgmt.tests.ts",
+                "${workspaceFolder}/tests/fileMgmt.int.tests.ts",
             ],
             "internalConsoleOptions": "neverOpen",
             "protocol": "inspector",

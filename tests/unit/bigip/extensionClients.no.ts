@@ -11,7 +11,7 @@
 import assert from 'assert';
 import nock from 'nock';
 
-import { getManagementClient, defaultHost, getFakeToken } from './fixtureUtils';
+import { getManagementClient, defaultHost, getFakeToken } from '../../fixtureUtils';
 
 import { ManagementClient } from '../../../src/bigip';
 import { AS3Client, DOClient, TSClient, CFClient } from '../../../src/bigip/extension';

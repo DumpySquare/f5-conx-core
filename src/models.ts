@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Timings } from "@szmarczak/http-timer/dist/source";
+import { AxiosResponse, Method, ResponseType } from "axios";
 
 /**
  * F5 TMOS token framework 
@@ -18,6 +19,11 @@ export type AuthTokenReqBody = {
     username: string,
     password: string,
     loginProviderName: string
+}
+
+
+export interface AxiosResponseWithTimings extends AxiosResponse {
+    timings?: Timings;
 }
 
 /**
@@ -51,6 +57,18 @@ export type HttpResponse<T = any> = {
 //     [header: string]: number | string | string[] | undefined ;
 // }
 
+
+export type F5HttpRequest = {
+    baseURL: string,
+    method?: Method,
+    url: string,
+    headers?: any,
+    data?: any,
+    validateStatus?: any,
+    advancedReturn?: boolean,
+    contentType?: string,
+    responseType?: ResponseType
+}
 
 
 

@@ -10,7 +10,7 @@
 'use strict';
 
 import { As3MetaData, AtcInfo } from "../models";
-import { ManagementClient } from "./managementClient";
+import { ManagementClient } from "./mgmtClient";
 
 
 export class As3Client {
