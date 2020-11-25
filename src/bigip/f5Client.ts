@@ -193,8 +193,34 @@ export class F5Client {
         // K13132: Backing up and restoring BIG-IP configuration files with a UCS archive
         // https://support.f5.com/csp/article/K13132
         // tmsh save sys ucs $(echo $HOSTNAME | cut -d'.' -f1)-$(date +%H%M-%m%d%y)
+        const data = {
+            "command": "save",
+            "name": "myUcs"
+         }
 
+        // /mgmt/tm/sys/ucs
 
+         // /mgmt/tm/shared/sys/backup/example
+         // /mgmt/tm/shared/sys/backup/a5e23ab2-cfc3-4f69-966e-30aeb237b5a8
+
+        // const resp = await this._mgmtClient.makeRequest(
+        const hh = {
+            url: '/mgmt/tm/shared/sys/backup',
+            method: 'POST',
+            body: {
+                command: 'save',
+                name: 'test.ucs'
+            }
+        }
+        const jj = {
+            url: '/mgmt/tm/shared/sys/backup',
+            method: 'POST',
+            body: {
+                action: 'BACKUP',
+                file: 'test.ucs',
+                passphrase: 'bennn'
+            }
+        }
 
         return {
             localDestPathFileName: '/path/file.ucs',
