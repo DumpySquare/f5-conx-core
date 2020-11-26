@@ -22,6 +22,24 @@ export type AuthTokenReqBody = {
 }
 
 
+/**
+ * types of F5 file download locations
+ * - UCS
+ *   - uri: /mgmt/shared/file-transfer/ucs-downloads/{filname}
+ *   - path: /var/local/ucs/{filename}
+ * - QKVIEW
+ *   - uri: /mgmt/cm/autodeploy/qkview-downloads/{filename}
+ *   - path: /var/tmp/{filename}
+ * - ISO
+ *   - uri: /mgmt/cm/autodeploy/software-image-downloads/{filename}
+ *   - path: /shared/images/{filename}
+ * 
+ * 
+ * K04396542: Generating a QKView diagnostic file using the iControl REST API
+ *  - https://support.f5.com/csp/article/K04396542
+ */
+export type F5DownLoad = 'UCS' | 'QKVIEW' | 'ISO'
+
 export interface AxiosResponseWithTimings extends AxiosResponse {
     timings?: Timings;
 }

@@ -180,6 +180,7 @@ export class ManagementClient {
     }
 
 
+
     /**
      * download file from f5 (ucs/qkview/...)
      *  - there are only a couple of directories accessible via api
@@ -190,12 +191,13 @@ export class ManagementClient {
      * @param fileName file name on bigip
      * @param localDestPathFile where to put the file (including file name)
      */
-    async download(fileName: string, localDestPath: string) {
+    async download(fileName: string, localDestPath: string, downloadType: F5DownLoad) {
 
         // if auth token has expired, it should have been cleared, get new one
         if (!this._token) {
             await this.getToken();
         }
+
         return await f5Https.downloadToFile(localDestPath, {
                 baseURL: `https://${this.host}:${this.port}`,
                 url: `/mgmt/cm/autodeploy/software-image-downloads/${fileName}`,

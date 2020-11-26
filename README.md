@@ -103,7 +103,8 @@ Using these timings we can log and provide stats about what devices (mainly f5) 
   - If none is supplied, the default 'local' is set
 - IPv6 support (DONE)
   - Tests with basic usage/connectivity
-- Added additional response details necessary for upper layer integration, like request details and full response details
+- Added additional response details necessary for upper layer integration, like request details and full response details (DONE)
+- proxy support for external calls for things like accessing github/iHealth
 
 
 ### Further plans (mostly in priority...)

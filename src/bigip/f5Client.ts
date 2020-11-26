@@ -1,7 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/ban-types */
 
 /*
  * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
@@ -62,13 +59,7 @@ export class F5Client {
      * 
      * @returns request response
      */
-    async https(uri: string, options?: {
-        method?: Method;
-        headers?: any;
-        data?: object;
-        contentType?: string;
-        advancedReturn?: boolean;
-    }): Promise<HttpResponse> {
+    async https(uri: string, options?: F5HttpRequest): Promise<HttpResponse> {
         return await this._mgmtClient.makeRequest(uri, options ? options : undefined)
     }
 
@@ -152,7 +143,7 @@ export class F5Client {
      *  - used for ucs/ilx-rpms/.conf-merges
      * @param localSourcePathFilename 
      */
-    async upload(localSourcePathFilename: string) {
+    async upload(localSourcePathFilename: string): Promise<HttpResponse> {
 
         return this._mgmtClient.upload(localSourcePathFilename)
 
@@ -166,7 +157,7 @@ export class F5Client {
      *      can put thier output files in the same place
      * @param localDestPathFile 
      */
-    async download(fileName: string, localDestPath: string) {
+    async download(fileName: string, localDestPath: string): Promise<HttpResponse> {
         return this._mgmtClient.download(fileName, localDestPath)
     }
 
@@ -186,41 +177,8 @@ export class F5Client {
             passPhrase?: string;
             noPrivateKey?: boolean;
             mini?: boolean;
-        }): Promise<object> {
+        }): Promise<any> {
 
-        // tmsh save sys ucs /var/tmp/backup_${HOSTNAME}_`date +%Y%m%d-%H%M%S`.ucs
-        // nice -n 19 qkview -s0
-        // K13132: Backing up and restoring BIG-IP configuration files with a UCS archive
-        // https://support.f5.com/csp/article/K13132
-        // tmsh save sys ucs $(echo $HOSTNAME | cut -d'.' -f1)-$(date +%H%M-%m%d%y)
-        const data = {
-            "command": "save",
-            "name": "myUcs"
-         }
-
-        // /mgmt/tm/sys/ucs
-
-         // /mgmt/tm/shared/sys/backup/example
-         // /mgmt/tm/shared/sys/backup/a5e23ab2-cfc3-4f69-966e-30aeb237b5a8
-
-        // const resp = await this._mgmtClient.makeRequest(
-        const hh = {
-            url: '/mgmt/tm/shared/sys/backup',
-            method: 'POST',
-            body: {
-                command: 'save',
-                name: 'test.ucs'
-            }
-        }
-        const jj = {
-            url: '/mgmt/tm/shared/sys/backup',
-            method: 'POST',
-            body: {
-                action: 'BACKUP',
-                file: 'test.ucs',
-                passphrase: 'bennn'
-            }
-        }
 
         return {
             localDestPathFileName: '/path/file.ucs',
@@ -259,7 +217,7 @@ export class F5Client {
      *  - should this just install an rpm already uploaded?
      *  - or should this also fetch/upload the requested rpm?
      */
-    async installRPM(rpmName: string) {
+    async installRPM(rpmName: string): Promise<HttpResponse> {
 
         return;
     }
@@ -271,7 +229,7 @@ export class F5Client {
      * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
      * todo: refresh this file with every packages release via git actions or package.json script
      */
-    async refreshMetaData() {
+    async refreshMetaData(): Promise<HttpResponse> {
 
         return;
     }
