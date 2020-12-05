@@ -8,6 +8,9 @@
 
 'use strict';
 
-import * as _bigip from './bigip';
+export { F5Client } from '../src/bigip/f5Client';
 
-export const bigip = _bigip;
+export * as extHttp from './utils/extHttp'
+
+export { IhealthClient } from './iHealthClient'
+

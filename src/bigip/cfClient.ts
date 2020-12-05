@@ -9,19 +9,19 @@
 
 'use strict';
 
-import { CfMetaData, AtcInfo } from "../models";
-import { ManagementClient } from "./mgmtClient";
+import { CfMetaData, AtcInfo } from "./bigipModels";
+import { MgmtClient } from "./mgmtClient";
 
 
 export class CfClient {
-    protected _mgmtClient: ManagementClient;
+    protected _mgmtClient: MgmtClient;
     protected _metaData: CfMetaData;
     protected _version: AtcInfo;
-    
-    constructor (
+
+    constructor(
         versions: AtcInfo,
         metaData: CfMetaData,
-        mgmtClient: ManagementClient
+        mgmtClient: MgmtClient
     ) {
         this._version = versions;
         this._metaData = metaData;
@@ -29,19 +29,19 @@ export class CfClient {
     }
 
 
-    async get () {
+    async get(): Promise<string> {
         return 'cf-get';
     }
 
-    async post () {
+    async post(): Promise<string> {
         return 'cf-post';
     }
 
-    async patch () {
+    async patch(): Promise<string> {
         return 'cf-patch';
     }
 
-    async remove () {
+    async remove(): Promise<string> {
         return 'cf-remove';
     }
 }

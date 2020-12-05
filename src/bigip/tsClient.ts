@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
  * license terms. Notwithstanding anything to the contrary in the EULA, Licensee
@@ -9,33 +8,33 @@
 
 'use strict';
 
-import { TsMetaData, AtcInfo } from "../models";
-import { ManagementClient } from "./mgmtClient";
+import { TsMetaData, AtcInfo } from "./bigipModels";
+import { MgmtClient } from "./mgmtClient";
 
 export class TsClient {
-    protected _mgmtClient: ManagementClient;
+    protected _mgmtClient: MgmtClient;
     protected _metaData: TsMetaData;
     protected _version: AtcInfo;
     
     constructor (
         versions: AtcInfo,
         metaData: TsMetaData,
-        mgmtClient: ManagementClient
+        mgmtClient: MgmtClient
     ) {
         this._version = versions;
         this._metaData = metaData;
         this._mgmtClient = mgmtClient;
     }
 
-    async get () {
+    async get (): Promise<string> {
         return 'ts-get';
     }
 
-    async post () {
+    async post (): Promise<string> {
         return 'ts-post';
     }
 
-    async inpsect () {
+    async inpsect (): Promise<string> {
         return 'ts-inpsect';
     }
 

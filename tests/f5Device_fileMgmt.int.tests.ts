@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
 /*
  * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
  * license terms. Notwithstanding anything to the contrary in the EULA, Licensee
@@ -19,7 +17,8 @@ import path from 'path';
 import { F5Client } from '../src/bigip/f5Client';
 import { getF5Client, ipv6Host } from './fixtureUtils';
 import { getFakeToken } from './fixtureUtils';
-import { AuthTokenReqBody } from '../src/models';
+import { AuthTokenReqBody } from '../src/bigip/bigipModels';
+import { F5DownloadPaths } from '../src/constants';
 
 
 let f5Client: F5Client;
@@ -75,17 +74,51 @@ describe('F5Device file upload/download integration tests - ipv6', function () {
 
 
 
-    it('download file from F5', async function () {
+    it('download file from F5 - ISO path', async function () {
         nock(`https://${ipv6Host}`)
             .post('/mgmt/shared/authn/login')
             .reply(200, (uri, reqBody: AuthTokenReqBody) => {
                 return getFakeToken(reqBody.username, reqBody.loginProviderName);
             })
             .persist()
-            .get(`/mgmt/cm/autodeploy/software-image-downloads/${rpm}`)
+            .get(`${F5DownloadPaths.iso.uri}/${rpm}`)
             .replyWithFile(200, filePath);
 
-        const resp = await f5Client.download(rpm, tmp);    // download file
+        const resp = await f5Client.download(rpm, tmp, 'ISO');    // download file
+
+        assert.ok(fs.existsSync(resp.data.path))           // confirm/assert file is there
+        fs.unlinkSync(resp.data.path);                     // remove tmp file
+        await f5Client.clearLogin();
+    });
+
+    it('download file from F5 - UCS path', async function () {
+        nock(`https://${ipv6Host}`)
+            .post('/mgmt/shared/authn/login')
+            .reply(200, (uri, reqBody: AuthTokenReqBody) => {
+                return getFakeToken(reqBody.username, reqBody.loginProviderName);
+            })
+            .persist()
+            .get(`${F5DownloadPaths.ucs.uri}/${rpm}`)
+            .replyWithFile(200, filePath);
+
+        const resp = await f5Client.download(rpm, tmp, 'UCS');    // download file
+
+        assert.ok(fs.existsSync(resp.data.path))           // confirm/assert file is there
+        fs.unlinkSync(resp.data.path);                     // remove tmp file
+        await f5Client.clearLogin();
+    });
+
+    it('download file from F5 - qkview path', async function () {
+        nock(`https://${ipv6Host}`)
+            .post('/mgmt/shared/authn/login')
+            .reply(200, (uri, reqBody: AuthTokenReqBody) => {
+                return getFakeToken(reqBody.username, reqBody.loginProviderName);
+            })
+            .persist()
+            .get(`${F5DownloadPaths.qkview.uri}/${rpm}`)
+            .replyWithFile(200, filePath);
+
+        const resp = await f5Client.download(rpm, tmp, 'QKVIEW');    // download file
 
         assert.ok(fs.existsSync(resp.data.path))           // confirm/assert file is there
         fs.unlinkSync(resp.data.path);                     // remove tmp file

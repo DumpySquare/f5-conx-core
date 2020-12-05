@@ -13,7 +13,7 @@ import * as fs from 'fs';
 import https from 'https';
 import axios, { AxiosRequestConfig } from 'axios';
 import timer from '@szmarczak/http-timer/dist/source';
-import { F5HttpRequest, HttpResponse } from '../models'
+import { F5HttpRequest, HttpResponse } from './httpModels'
 
 
 
@@ -60,11 +60,12 @@ export async function makeRequest(options: F5HttpRequest): Promise<HttpResponse>
     options = Object.assign(requestDefaults, options)
 
     // wrapped in a try for debugging
-    try {
+    // try {
+        // eslint-disable-next-line prefer-const
         httpResponse = await axios(options)
-    } catch (err) {
-        debugger;
-    }
+    // } catch (err) {
+    //     debugger;
+    // }
 
     // check for unsuccessful request
     if (httpResponse.status > 300) {
@@ -86,6 +87,34 @@ export async function makeRequest(options: F5HttpRequest): Promise<HttpResponse>
             timings: httpResponse.request.timings,
         }
     };
+}
+
+export async function followAsyncCall(options: F5HttpRequest): Promise<HttpResponse> {
+
+    // run a while loop every x number of seconds to check the status of an async job
+    //
+
+    let i = 0;  // loop counter
+    let resp: HttpResponse;
+        // use taskId to control loop
+        while(i < 10) {
+
+            resp = await makeRequest(options);
+
+            // todo: break out the successful and failed results, only refresh statusBars on successful
+            if(resp.data.status === 'FINISHED' || resp.data.status === 'FAILED') {
+
+                // await new Promise(resolve => { setTimeout(resolve, 20000); }); // 20 seconds
+                
+                return resp;
+            }
+
+            i++;
+            await new Promise(resolve => { setTimeout(resolve, 3000); }); // todo: update for global timer
+        }
+
+        // debugger;
+        return resp;
 }
 
 /**

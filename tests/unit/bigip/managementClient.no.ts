@@ -11,7 +11,7 @@
 import assert from 'assert';
 import nock from 'nock';
 import { ManagementClient } from '../../../src/bigip';
-import { AuthTokenReqBody } from '../../../src/models';
+import { AuthTokenReqBody } from '../../../src/bigipModels';
 
 import { getManagementClient, defaultHost, getFakeToken } from '../../fixtureUtils';
 

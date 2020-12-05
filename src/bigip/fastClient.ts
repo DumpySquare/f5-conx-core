@@ -9,19 +9,19 @@
 
 'use strict';
 
-import { FastMetaData, AtcInfo } from "../models";
-import { ManagementClient } from "./mgmtClient";
+import { FastMetaData, AtcInfo } from "./bigipModels";
+import { MgmtClient } from "./mgmtClient";
 
 
 export class FastClient {
-    protected _mgmtClient: ManagementClient;
+    protected _mgmtClient: MgmtClient;
     protected _metaData: FastMetaData;
     protected _version: AtcInfo;
-    
-    constructor (
+
+    constructor(
         versions: AtcInfo,
         metaData: FastMetaData,
-        mgmtClient: ManagementClient
+        mgmtClient: MgmtClient
     ) {
         this._version = versions;
         this._metaData = metaData;
@@ -29,19 +29,19 @@ export class FastClient {
     }
 
 
-    async get () {
+    async get(): Promise<string> {
         return 'fast-get';
     }
 
-    async post () {
+    async post(): Promise<string> {
         return 'fast-post';
     }
 
-    async patch () {
+    async patch(): Promise<string> {
         return 'fast-patch';
     }
 
-    async remove () {
+    async remove(): Promise<string> {
         return 'fast-remove';
     }
 }

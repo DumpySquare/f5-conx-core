@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /*
  * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
  * license terms. Notwithstanding anything to the contrary in the EULA, Licensee
@@ -9,34 +10,39 @@
 'use strict';
 
 
-import { ManagementClient } from "./mgmtClient";
+import { HttpResponse } from "../utils/httpModels";
+import { MgmtClient } from "./mgmtClient";
+import { F5DownloadPaths, iControlEndpoints } from '../constants';
+import { debug } from "console";
+import { rejects } from "assert";
 
 /**
  * handles F5 UCS tasks for generating and downloading UCS files
+ *  @param verion is used to adjust api end-points for different versions
+ *  @param mgmtclient provides necessary connectivity details
  */
 export class UcsClient {
-    protected _mgmtClient: ManagementClient;
-    
-    /**
-     * placeholder to track tmos version if we need to adjust methods depending on version
-     */
-    protected _tmosVersion: string;
+    protected _mgmtClient: MgmtClient;
 
-    /**
-     * the tasks path url seems to be the original async method
-     */
-    protected _taskUcsUrl = '/mgmt/tm/task/sys/ucs'
-    /**
-     * the shared path url seems to be the latest method
-     *  - also supports "no-private-keys" option
-     */
-    protected _sharedUcsUrl = '/mgmt/tm/shared/sys/backup'
+    // /**
+    //  * main ucs url - used for listing ucs on device
+    //  */
+    // ucsUrl = '/mgmt/tm/sys/ucs'
+
+    // /**
+    //  * the tasks path url seems to be the original async method
+    //  */
+    // taskUcsUrl = '/mgmt/tm/task/sys/ucs'
+
+    // /**
+    //  * the shared path url seems to be the latest method
+    //  *  - also supports "no-private-keys" option
+    //  */
+    // sharedUcsUrl = '/mgmt/tm/shared/sys/backup'
 
     constructor (
-        version: string,
-        mgmtClient: ManagementClient
+        mgmtClient: MgmtClient
     ) {
-        this._version = version;
         this._mgmtClient = mgmtClient;
     }
     // tmsh save sys ucs /var/tmp/backup_${HOSTNAME}_`date +%Y%m%d-%H%M%S`.ucs
@@ -55,85 +61,197 @@ export class UcsClient {
     /**
      * generate and download ucs file
      *  - should include all parameters for creating ucs
-     * @param localDestPathFile 
+     * @param options.fileName name of ucs to create (do not include .ucs)
+     * @param options.localDestPathFile 
      * @param options.passPhrase to encrypt ucs with
      * @param options.noPrivateKey exclude SSL private keys from regular ucs
      * @param options.mini create mini_ucs for corkscrew
      */
     async get(
-        localDestPathFile: string,
         options?: {
-            passPhrase?: string;
-            noPrivateKeys?: boolean;
+            fileName?: string,
+            localDestPathFile?: string,
+            passPhrase?: string,
+            noPrivateKeys?: boolean,
             mini?: boolean;
-        }): Promise<any> {
+        }): Promise<HttpResponse> {
 
-        const x = localDestPathFile + options;
         
+        const createResp = await this.create(options)
+
+        const dest = 
+            options?.localDestPathFile ?
+            options.localDestPathFile : createResp.data.file
+
+        const downloadResp = await this.download(createResp.data.file, dest)
+
+        return downloadResp;
+    }
+
+    /**
+     * 
+     * @param localDestPathFile 
+     * @param options.fileName
+     * @param options.passPhrase to encrypt ucs with
+     * @param options.noPrivateKey exclude SSL private keys from regular ucs
+     * @param options.mini create mini_ucs for corkscrew
+     */
+    async create(options?: {
+        fileName?: string,
+        passPhrase?: string,
+        noPrivateKeys?: boolean,
+        mini?: boolean
+    }): Promise<HttpResponse> {
+
+        let file = 
+            options?.fileName ? 
+            options.fileName : await this._mgmtClient.getFileName();
+
         if(options?.mini) {
 
-            // bash call to create mini_ucs
-            const tempFile = `mini_ucs.tar.gz`;
-        
+            const fileN = `${file}.mini_ucs.tar.gz`
+
             // build mini ucs
-            const ucsCmd = 'tar -czf /shared/images/${tempFile} /config/bigip.conf /config/bigip_base.conf /config/partitions';
+            // https://unix.stackexchange.com/questions/167717/tar-a-list-of-files-which-dont-all-exist
+            const ucsCmd = [
+             'tar',
+             '-czf',
+             `${F5DownloadPaths.ucs.path}${fileN}`,
+             '-C',
+             '/',
+             'config/bigip.conf',
+             'config/bigip_gtm.conf',
+             'config/bigip_base.conf',
+             'config/bigip_user.conf',
+             'config/bigip_script.conf',
+             'config/profile_base.conf',
+             'config/low_profile_base.conf',
+             'config/user_alert.conf',
+             'config/bigip.license',
+             'config/partitions'
+            ];
 
-            const makeMini = await this._mgmtClient.makeRequest(`/mgmt/tm/util/bash`, {
+            // /**
+            //  * sometime, not all the files are there, so it will toss errors, but still create the tar with the files it does find
+            //  * Example:  "commandResult":"tar: config/bigip_gtm.conf: Cannot stat: No such file or directory\ntar: config/bigip_script.conf: Cannot stat: No such file or directory\ntar: config/bigip.license: Cannot stat: No such file or directory\ntar: Exiting with failure status due to previous errors\n"
+            //  */
+
+            // run the main bash command to make the mini_ucs
+            return await this._mgmtClient.makeRequest(iControlEndpoints.bash, {
                 method: 'POST',
-                body: {
+                data: {
                     command: 'run',
-                    utilCmdArgs: `-c '${ucsCmd}'`
+                    utilCmdArgs: `-c '${ucsCmd.join(' ')}'`
                 }
-            });
+            })
+            .then( async resp => {
 
-            // then download
-            const             
-            // can we add the ability to passphrase the archive?
+                // todo: create a log statement saying, "The previous bash call could have tossed some errors about files missing, however, the tar/ucs should have still been created with the files that were present"
+
+                // run another bash command to ls ucs directory
+                //  this is just double checking everything worked as expected
+                return await this._mgmtClient.makeRequest(iControlEndpoints.bash, {
+                    method: 'POST',
+                    data: {
+                        command: 'run',
+                        utilCmdArgs: `-c 'ls ${F5DownloadPaths.ucs.path}'`
+                    }   
+                })
+                .then ( check => {
+
+                    if(check.data.commandResult.includes(fileN)) {
+
+                        // if file creation api worked and ls of /var/local/ucs api worked
+                        //  and we made sure the file we expect is in the directory...
+
+                        // inject file name into response so downstream functions can use it
+                        resp.data.file = fileN;
+
+                        // inject confirmation data - this is just for fyi
+                        resp.data.ls = check.data.commandResult
+                        return resp;
+                    } else {
+                        Promise.reject('mini_ucs api calls were successful, but the mini_ucs was not created.  Please check the logs for possible failure reasons')
+                    }
+                })
+            })
+
 
 
         } else {
-            // build api call depending on options
-            
-            const postBody = {}
 
+            // add ucs file suffix if not there
+            file = 
+                file.endsWith('.ucs') ?
+                file : `${file}.ucs`
+
+            // build api call depending on options
+            const postBody: {
+                action: string,
+                file: string,
+                passphrase?: string
+            } = {
+                // default regular backup params
+                action: 'BACKUP',
+                file,
+            }
+            
+            // debugger;
             if(options?.passPhrase && options?.noPrivateKeys) {
 
                 postBody.action = 'BACKUP_WITH_NO_PRIVATE_KEYS_WITH_ENCRYPTION';
-                postBody.file = 'testnnn.ucs';
                 postBody.passphrase = options.passPhrase;
 
             } else if (options?.passPhrase) {
                 
                 postBody.action = 'BACKUP_WITH_ENCRYPTION';
-                postBody.file = 'testnnn.ucs';
                 postBody.passphrase = options.passPhrase;
 
             } else if (options?.noPrivateKeys) {
                 
                 postBody.action = 'BACKUP_WITH_NO_PRIVATE_KEYS';
-                postBody.file = 'testnnn.ucs';
 
             }
 
             // create ucs
-            const createUcs = await this._mgmtClient.makeRequest(_sharedUcsUrl, {
+            return await this._mgmtClient.makeRequest(iControlEndpoints.sharedUcsBackup, {
                 method: 'POST',
                 data: postBody
             })
+            .then( async resp => {
 
+                // this url is always async, so we don't check for 202
+
+                const asyncUrl = `${iControlEndpoints.sharedUcsBackup}/${resp.data.id}`
+                // return response back to createUcs
+                return await this._mgmtClient.followAsync(asyncUrl);
+            })
+
+            
+            // debugger;
             // download ucs
-            const downloadedUcs = await this._mgmtClient.download()
+            // const downloadedUcs = await this._mgmtClient.download(createUcs.data, )
         }
+    }
 
-        return {
-            localDestPathFileName: '/path/file.ucs',
-            sizeBytes: '1234'
-        };
+    /**
+     * download ucs from f5
+     * 
+     * @param fileName file name of ucs on bigip
+     * @param localDestPathFile where to put the file (including file name)
+     */
+    async download(fileName: string, localDestPathFile: string): Promise<HttpResponse> {
+
+        return await this._mgmtClient.download(fileName, localDestPathFile, 'UCS');
     }
 
 
-    async list(): Promise<void> {
-        //
+    /**
+     * list ucs files on f5
+     */
+    async list(): Promise<HttpResponse> {
+        // this will check the folder every time
+        return await this._mgmtClient.makeRequest(iControlEndpoints.ucs)
     }
 }
 

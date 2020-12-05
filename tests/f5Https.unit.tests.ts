@@ -16,15 +16,10 @@ import * as fs from 'fs';
 import path from 'path';
 
 
-// import { F5Client } from '../src/bigip/f5Client';
 import { getF5Client, ipv6Host } from './fixtureUtils';
 import * as f5Https from '../src/utils/f5Https';
 import { debug } from 'console';
-// import { getFakeToken } from './fixtureUtils';
-// import { AuthTokenReqBody } from '../src/models';
 
-
-// let f5Client: F5Client;
 
 // test file name
 const rpm = 'f5-appsvcs-templates-1.4.0-1.noarch.rpm';

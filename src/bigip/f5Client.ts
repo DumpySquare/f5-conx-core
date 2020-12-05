@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
 /*
  * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
@@ -10,45 +9,73 @@
 
 'use strict';
 
-import { Method } from "axios";
-import { HttpResponse, AtcMetaData, AtcInfo } from "../models";
-// import { discoverBigip } from "./discover";
+import { AtcMetaData, AtcInfo, F5InfoApi, F5DownLoad } from "./bigipModels";
+import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
 import { MetadataClient } from "./extension/metadata";
-import { ManagementClient } from "./mgmtClient";
+import Logger from '../logger'
 
-import localAtcMetadata from './atc_metadata.json';
+import { MgmtClient } from "./mgmtClient";
+import { UcsClient } from "./ucsClient";
 import { FastClient } from "./fastClient";
 import { As3Client } from "./as3Client";
 import { DoClient } from "./doClient";
 import { TsClient } from "./tsClient";
 import { CfClient } from "./cfClient";
 
+import localAtcMetadata from './atc_metadata.json';
+
+
+/**
+ *  Main F5 connectivity client
+ * 
+ * Basic Example:
+ * 
+ * ```
+ * const mgmtClient = new f5Client(
+ *      host: '192.0.2.1',
+ *      user: 'admin',
+ *      password: 'admin', 
+ *      {
+ *          port: 8443,
+ *          provider: 'tmos'
+ *      }
+ * );
+ * await f5Client.discover();
+ * const resp = await f5Client.makeRequest('/mgmt/tm/sys/version');
+ * ```
+*/
 export class F5Client {
-    protected _mgmtClient: ManagementClient;
+    protected _mgmtClient: MgmtClient;
     protected _metadataClient: MetadataClient;
     protected _atcMetaData: AtcMetaData = localAtcMetadata;
-    host: unknown;
+    host: F5InfoApi;
+    ucs: UcsClient;
     fast: FastClient | undefined;
     as3: As3Client | undefined;
     do: DoClient | undefined;
     ts: TsClient | undefined;
     cf: CfClient | undefined;
+    logger: Logger | unknown;
 
     constructor(
         host: string,
         user: string,
         password: string,
         options?: {
-            port?: number;
-            provider?: string;
+            port?: number,
+            provider?: string,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            logger?: any,
         }
     ) {
-        this._mgmtClient = new ManagementClient(
+        this._mgmtClient = new MgmtClient(
             host,
             user,
             password,
             options ? options : undefined
         )
+        // assign incoming logger reference, else assign local
+        this.logger = options?.logger ? options.logger : Logger.getLogger();
     }
 
     /**
@@ -81,32 +108,55 @@ export class F5Client {
      *  
      */
     async discover(): Promise<void> {
+
+        
         // try tmos info endpoint
         // try fast info endpoint
         // try as3 info endpoint
         // try do info endpoint
         // try ts info endpoint
         // try cf info endpoint
-
+        
+        // get device info
         await this._mgmtClient.makeRequest('/mgmt/shared/identified-devices/config/device-info')
-            .then(resp => this.host = resp.data)
+        .then(resp => this.host = resp.data)
 
+        // Assign some details to the mgmtClient so they can be used in other areas
+        this._mgmtClient.hostname = this.host.hostname;
+        this._mgmtClient.mgmtIP = this.host.managementAddress;
+        this._mgmtClient.version = this.host.version;
+
+        // setup ucsClient
+        this.ucs = new UcsClient(this._mgmtClient)
+        
+        // setup qkviewClient
+        // this.qkview = new QkviewClient(this._mgmtClient)
+                
+        
+        
         // check FAST installed by getting verion info
         await this._mgmtClient.makeRequest(this._atcMetaData.components.fast.endpoints.info.uri)
             .then(resp => {
                 // todo: build fast client class instantiate here
                 this.fast = new FastClient(resp.data as AtcInfo, this._atcMetaData.components.fast, this._mgmtClient);
             })
+            .catch( () => {
+                //do nothing...
+                // debugger;
+            });
 
 
         // check AS3 installed by getting verion info
         await this._mgmtClient.makeRequest(this._atcMetaData.components.as3.endpoints.info.uri)
-            .then(resp => {
+            .then( resp => {
                 // if http 2xx, create as3 client
                 // notice the recast of resp.data type of "unknown" to "AtcInfo"
                 this.as3 = new As3Client(resp.data as AtcInfo, this._atcMetaData.components.as3, this._mgmtClient);
             })
-            .catch(err => console.log(err));
+            .catch( () => {
+                //do nothing...
+                // debugger;
+            });
 
 
         // check DO installed by getting verion info
@@ -114,7 +164,10 @@ export class F5Client {
             .then(resp => {
                 this.do = new DoClient(resp.data[0] as AtcInfo, this._atcMetaData.components.do, this._mgmtClient);
             })
-            .catch(err => console.log(err));
+            .catch( () => {
+                //do nothing...
+                // debugger;
+            });
 
 
         // check TS installed by getting verion info
@@ -122,7 +175,10 @@ export class F5Client {
             .then(resp => {
                 this.ts = new TsClient(resp.data as AtcInfo, this._atcMetaData.components.ts, this._mgmtClient);
             })
-            .catch(err => console.log(err));
+            .catch( () => {
+                //do nothing...
+                // debugger;
+            });
 
 
         // check CF installed by getting verion info
@@ -130,7 +186,10 @@ export class F5Client {
             .then(resp => {
                 this.cf = new CfClient(resp.data as AtcInfo, this._atcMetaData.components.cf, this._mgmtClient);
             })
-            .catch(err => console.log(err));
+            .catch( () => {
+                //do nothing...
+                // debugger;
+            });
 
 
         return;
@@ -151,76 +210,40 @@ export class F5Client {
 
 
     /**
-     * download file from f5 (ucs/qkview/...)
-     *  - there are only a couple of directories accessible via api
-     *      need to document them and pick a default so the other functions
-     *      can put thier output files in the same place
-     * @param localDestPathFile 
+     * download file from f5 (ucs/qkview/iso)
+     * - UCS
+     *   - uri: /mgmt/shared/file-transfer/ucs-downloads/${fileName}
+     *   - path: /var/local/ucs/${fileName}
+     * - QKVIEW
+     *   - uri: /mgmt/cm/autodeploy/qkview-downloads/${fileName}
+     *   - path: /var/tmp/${fileName}
+     * - ISO
+     *   - uri: /mgmt/cm/autodeploy/software-image-downloads/${fileName}
+     *   - path: /shared/images/${fileName}
+     * 
+     * @param fileName file name on bigip
+     * @param localDestPathFile where to put the file (including file name)
+     * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
      */
-    async download(fileName: string, localDestPath: string): Promise<HttpResponse> {
-        return this._mgmtClient.download(fileName, localDestPath)
-    }
-
-
-
-    /**
-     * generate and download ucs file
-     *  - should include all parameters for creating ucs
-     * @param localDestPathFile 
-     * @param options.passPhrase to encrypt ucs with
-     * @param options.noPrivateKey exclude SSL private keys from regular ucs
-     * @param options.mini create mini_ucs for corkscrew
-     */
-    async getUCS(
-        localDestPathFile: string,
-        options?: {
-            passPhrase?: string;
-            noPrivateKey?: boolean;
-            mini?: boolean;
-        }): Promise<any> {
-
-
-        return {
-            localDestPathFileName: '/path/file.ucs',
-            sizeBytes: '1234'
-        };
+    async download(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<HttpResponse> {
+        return this._mgmtClient.download(fileName, localDestPath, downloadType)
     }
 
 
 
 
-    /**
-     * generate and download qkview
-     *  - should include all parameters for creating a qkview
-     *  - should probably default to silent with lowest priority
-     * @param localDestPathFile 
-     * @param options 
-     */
-    async getQkview(
-        localDestPathFile: string,
-        options?: {
-            excludeCoreFiles: boolean;
-        }): Promise<unknown> {
-
-        return {
-            localDestPathFileName: '/path/file.qkview',
-            sizeBytes2: '4567'
-        };
-    }
 
 
+    // /**
+    //  * install specified ilx-rpm
+    //  *  - need to discuss workflow
+    //  *  - should this just install an rpm already uploaded?
+    //  *  - or should this also fetch/upload the requested rpm?
+    //  */
+    // async installRPM(rpmName: string): Promise<HttpResponse> {
 
-
-    /**
-     * install specified ilx-rpm
-     *  - need to discuss workflow
-     *  - should this just install an rpm already uploaded?
-     *  - or should this also fetch/upload the requested rpm?
-     */
-    async installRPM(rpmName: string): Promise<HttpResponse> {
-
-        return;
-    }
+    //     return;
+    // }
 
 
 

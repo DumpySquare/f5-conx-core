@@ -13,10 +13,10 @@ import * as fs from 'fs';
 import https from 'https';
 import axios from 'axios';
 
-import Logger from '../logger';
+// import Logger from '../logger';
 import * as miscUtils from './misc';
 
-const logger = Logger.getLogger();
+// const logger = Logger.getLogger();
 
 /**
  * Make generic HTTP request
@@ -37,7 +37,7 @@ export async function makeRequest(host: string, uri: string, options?: {
 }): Promise<object> {
     options = options || {};
 
-    logger.debug(`Making HTTP request: ${host} ${uri} ${miscUtils.stringify(options)}`);
+    // logger.debug(`Making HTTP request: ${host} ${uri} ${miscUtils.stringify(options)}`);
 
     const httpResponse = await axios({
         httpsAgent: new https.Agent({

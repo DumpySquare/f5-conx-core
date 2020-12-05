@@ -15,7 +15,7 @@ import { getManagementClient, defaultHost, getFakeToken } from '../../fixtureUti
 
 import { ManagementClient } from '../../../src/bigip';
 import { AS3Client, DOClient, TSClient, CFClient } from '../../../src/bigip/extension';
-import { AuthTokenReqBody } from '../../../src/models';
+import { AuthTokenReqBody } from '../../../src/bigipModels';
 
 const FIXED_INFO = {
     'as3': {

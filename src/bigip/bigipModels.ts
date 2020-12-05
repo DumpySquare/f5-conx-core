@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Timings } from "@szmarczak/http-timer/dist/source";
-import { AxiosResponse, Method, ResponseType } from "axios";
 
 /**
  * F5 TMOS token framework 
@@ -25,14 +22,14 @@ export type AuthTokenReqBody = {
 /**
  * types of F5 file download locations
  * - UCS
- *   - uri: /mgmt/shared/file-transfer/ucs-downloads/{filname}
- *   - path: /var/local/ucs/{filename}
+ *   - uri: /mgmt/shared/file-transfer/ucs-downloads/${fileName}
+ *   - path: /var/local/ucs/${fileName}
  * - QKVIEW
- *   - uri: /mgmt/cm/autodeploy/qkview-downloads/{filename}
- *   - path: /var/tmp/{filename}
+ *   - uri: /mgmt/cm/autodeploy/qkview-downloads/${fileName}
+ *   - path: /var/tmp/${fileName}
  * - ISO
- *   - uri: /mgmt/cm/autodeploy/software-image-downloads/{filename}
- *   - path: /shared/images/{filename}
+ *   - uri: /mgmt/cm/autodeploy/software-image-downloads/${fileName}
+ *   - path: /shared/images/${fileName}
  * 
  * 
  * K04396542: Generating a QKView diagnostic file using the iControl REST API
@@ -40,33 +37,9 @@ export type AuthTokenReqBody = {
  */
 export type F5DownLoad = 'UCS' | 'QKVIEW' | 'ISO'
 
-export interface AxiosResponseWithTimings extends AxiosResponse {
-    timings?: Timings;
-}
+export type F5Upload = 'ISO' | 'FILE'
 
-/**
- * custom http response with timings, based on axios response
- */
-export type HttpResponse<T = any> = {
-    data?: T;
-    status: number;
-    statusText?: string;
-    headers?: unknown;
-    config?: {
-        url: string;
-        httpsAgent: {
-            protocol: string
-        }
-    }
-    request?: {
-        url: string;
-        method: string;
-        headers: unknown;
-        protocol: string;
-        timings: Timings;
-        // data?: unknown;
-    };
-};
+
 
 // // https://nodejs.org/docs/latest-v12.x/api/http.html#http_http_request_url_options_callback
 
@@ -76,17 +49,7 @@ export type HttpResponse<T = any> = {
 // }
 
 
-export type F5HttpRequest = {
-    baseURL: string,
-    method?: Method,
-    url: string,
-    headers?: any,
-    data?: any,
-    validateStatus?: any,
-    advancedReturn?: boolean,
-    contentType?: string,
-    responseType?: ResponseType
-}
+
 
 
 
@@ -232,3 +195,52 @@ export type CfMetaData = {
     },
     componentDependencies: unknown;
 };
+
+
+
+
+export type F5InfoApi = {
+    baseMac: string;
+    hostMac: string;
+    halUuid: string;
+    chassisSerialNumber: string;
+    slots: {
+        volume: string;
+        product: string;
+        version: string;
+        build: string;
+        isActive: boolean;
+    }[];
+    license: {
+        licenseEndDateTime: string;
+        registrationKey: string;
+        activeModules: string[];
+        generation: number;
+        lastUpdateMicros: number;
+    };
+    interfaces: string[];
+    isIControlRestSupported: boolean;
+    icrdPort: number;
+    time: number;
+    physicalMemory: number;
+    platform: string;
+    cpu: string;
+    machineId: string;
+    address: string;
+    hostname: string;
+    version: string;
+    product: string;
+    platformMarketingName: string;
+    edition: string;
+    build: string;
+    restFrameworkVersion: string;
+    managementAddress: string;
+    mcpDeviceName: string;
+    isClustered: boolean;
+    isVirtual: boolean;
+    hypervisorType: string;
+    generation: number;
+    lastUpdateMicros: number;
+    kind: string;
+    selfLink: string;
+}

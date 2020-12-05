@@ -59,6 +59,9 @@ export const deviceInfo = {
 }
 
 
+
+
+
 /**
  * fast info api @ '/mgmt/shared/fast/info'
  */

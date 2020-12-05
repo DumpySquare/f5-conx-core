@@ -17,18 +17,18 @@ import {
     as3InfoApiReponse, 
     deviceInfo, 
     doInfoApiReponse, 
-    fastInfoApiResponse 
+    fastInfoApiResponse,
+    tsInfoApiReponse,
+    cfInfoApiReponse 
 } from './artifacts/f5_device_atc_infos';
 
 import { 
     getF5Client,
     ipv6Host 
 } from './fixtureUtils';
-// import { requestNew } from '../../src/utils/http_new'
-// import { makeRequest } from '../../src/utils/http';
 import { getFakeToken } from './fixtureUtils';
 import localAtcMetadata from '../src/bigip/atc_metadata.json';
-import { AuthTokenReqBody } from '../src/models';
+import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 
 
 
@@ -113,10 +113,10 @@ describe('http client tests - ipv6', function () {
             .reply(200, doInfoApiReponse)
 
             .get(localAtcMetadata.components.ts.endpoints.info.uri)
-            .reply(200, doInfoApiReponse)
+            .reply(200, tsInfoApiReponse)
 
             .get(localAtcMetadata.components.cf.endpoints.info.uri)
-            .reply(200, doInfoApiReponse)
+            .reply(200, cfInfoApiReponse)
 
         // create a custom mgmtClient so we can inject/test port/provider
         const dClient = new F5Client(
@@ -131,7 +131,7 @@ describe('http client tests - ipv6', function () {
 
         const resp = await dClient.https('/foo');
 
-        // like to have some feedback on this function at some point
+        // like to have some feedback on this function at some point (have it return something)
         // right now it just discovers information
         const disc = await dClient.discover();
 

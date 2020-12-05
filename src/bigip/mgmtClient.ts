@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
 /*
  * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
  * license terms. Notwithstanding anything to the contrary in the EULA, Licensee
@@ -13,27 +9,13 @@
 'use strict';
 
 import * as f5Https from '../utils/f5Https';
-import { F5HttpRequest, HttpResponse, Token } from '../models'
-import { Method } from 'axios';
+import { Token, F5DownLoad } from './bigipModels';
+import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
+import { F5DownloadPaths } from '../constants';
 
-
-
-
-//  * Basic Example:
-//  * 
-//  * ```
-//  * const mgmtClient = new ManagementClient({
-//  *      host: '192.0.2.1',
-//  *      port: 443,
-//  *      user: 'admin',
-//  *      password: 'admin'
-//  * });
-//  * await mgmtClient.login();
-//  * await mgmtClient.makeRequest('/mgmt/tm/sys/version');
-//  * ```
 
 /**
- *  Base bigip connectivity client
+ * F5 connectivity mgmt client
  * 
  * @param host
  * @param port
@@ -42,9 +24,12 @@ import { Method } from 'axios';
  * @param options.provider
  * 
  */
-export class ManagementClient {
+export class MgmtClient {
     host: string;
     port: number;
+    hostname: string;
+    mgmtIP: string;
+    version: string;
     protected _user: string;
     protected _password: string;
     protected _provider: string;
@@ -81,6 +66,10 @@ export class ManagementClient {
         clearInterval(this._tokenIntervalId);
         return this._token = undefined;
     }
+
+    // setHostname(hostname: string) {
+    //     this.hostname = hostname;
+    // }
 
 
 
@@ -146,14 +135,7 @@ export class ManagementClient {
      * 
      * @returns request response
      */
-    async makeRequest(uri: string, options?: {
-        method?: Method;
-        headers?: object;
-        data?: object;
-        contentType?: string;
-        responseType?: string;
-        advancedReturn?: boolean;
-    }) {
+    async makeRequest(uri: string, options?: F5HttpRequest): Promise<HttpResponse> {
         // options = options || {};
 
         // if auth token has expired, it should have been cleared, get new one
@@ -180,42 +162,64 @@ export class ManagementClient {
     }
 
 
+    async followAsync(url: string): Promise<HttpResponse> {
+
+        if (!this._token) {
+            await this.getToken();
+        }
+
+        // base request object
+        const requestObject: F5HttpRequest = {
+            baseURL: `https://${this.host}:${this.port}`,
+            url,
+            headers: {
+                'X-F5-Auth-Token': this._token.token
+            },
+        }
+        return await f5Https.followAsyncCall(requestObject);
+    }
+
+
 
     /**
-     * download file from f5 (ucs/qkview/...)
-     *  - there are only a couple of directories accessible via api
-     *      need to document them and pick a default so the other functions
-     *      can put thier output files in the same place
-     * https://devcentral.f5.com/s/articles/demystifying-icontrol-rest-part-5-transferring-files
+     * download file from f5 (ucs/qkview/iso)
+     * - UCS
+     *   - uri: /mgmt/shared/file-transfer/ucs-downloads/${fileName}
+     *   - path: /var/local/ucs/${fileName}
+     * - QKVIEW
+     *   - uri: /mgmt/cm/autodeploy/qkview-downloads/${fileName}
+     *   - path: /var/tmp/${fileName}
+     * - ISO
+     *   - uri: /mgmt/cm/autodeploy/software-image-downloads/${fileName}
+     *   - path: /shared/images/${fileName}
      * 
      * @param fileName file name on bigip
      * @param localDestPathFile where to put the file (including file name)
+     * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
      */
-    async download(fileName: string, localDestPath: string, downloadType: F5DownLoad) {
+    async download(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<HttpResponse> {
 
         // if auth token has expired, it should have been cleared, get new one
         if (!this._token) {
             await this.getToken();
         }
 
-        return await f5Https.downloadToFile(localDestPath, {
-                baseURL: `https://${this.host}:${this.port}`,
-                url: `/mgmt/cm/autodeploy/software-image-downloads/${fileName}`,
-                headers: {
-                    'X-F5-Auth-Token': this._token.token
-                },
-                responseType: 'stream'
-        })
-        
-        // return await f5Https.downloadToFile(fileName, localDestPath, this.host, this.port, this._token.token)
-        // return await f5Https.downloadToFile(
-        //     `https://${this.host}:${this.port}/mgmt/cm/autodeploy/software-image-downloads/${fileName}`,
-        //     localDestPath, {
-        //     headers: {
-        //         'X-F5-Auth-Token': this._token
-        //     },
-        // }
-        // )
+        // base request object
+        const requestObject: F5HttpRequest = {
+            baseURL: `https://${this.host}:${this.port}`,
+            headers: {
+                'X-F5-Auth-Token': this._token.token
+            },
+            responseType: 'stream'
+        }
+
+        // swap out download url as needed (ternary method)
+        requestObject.url
+            = downloadType === 'UCS' ? `${F5DownloadPaths.ucs.uri}/${fileName}`
+                : downloadType === 'QKVIEW' ? `${F5DownloadPaths.qkview.uri}/${fileName}`
+                    : `${F5DownloadPaths.iso.uri}/${fileName}`;
+
+        return await f5Https.downloadToFile(localDestPath, requestObject)
     }
 
 
@@ -231,7 +235,7 @@ export class ManagementClient {
      * @param fileName file name on bigip
      * @param localDestPathFile where to put the file (including file name)
      */
-    async upload(localSourcePathFilename: string) {
+    async upload(localSourcePathFilename: string): Promise<HttpResponse> {
 
         // if auth token has expired, it should have been cleared, get new one
         if (!this._token) {
@@ -239,5 +243,32 @@ export class ManagementClient {
         }
 
         return await f5Https.uploadFile(localSourcePathFilename, this.host, this.port, this._token.token)
+    }
+
+
+
+    /**
+     * this funciton is used to build a filename for with all necessary details
+     *   for files like ucs/qkviews/
+     * @returns string with `${this.hostname}_${this.host}_${cleanISOdateTime}`
+     * @example bigip1_10.200.244.101_20201127T220451142Z
+     */
+    async getFileName(): Promise<string> {
+
+        // start with ISO Date and remove ":", ".", and "-"
+        const cleanISOdateTime = new Date().toISOString().replace(/(:|\.|-)/g, '')
+        
+        // if mgmtIP is IPv6 format - make it filename friendly
+        if(/\[[\w:]+\]/.test(this.mgmtIP)) {
+
+            const removedBrackets = this.mgmtIP.replace(/\[|\]/g, '')
+            const flat = removedBrackets.replace(/:/g, '.')
+            return `${this.hostname}_${flat}_${cleanISOdateTime}`;
+
+        } else {
+
+            return `${this.hostname}_${this.mgmtIP}_${cleanISOdateTime}`;
+
+        }
     }
 }
