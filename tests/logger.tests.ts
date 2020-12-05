@@ -19,7 +19,7 @@ describe('Logger', function() {
 
     beforeEach(function() {
         logger = Logger.getLogger();
-        mockLog = sinon.stub(Logger.prototype, '_log');
+        mockLog = sinon.stub(Logger.prototype, 'log');
     });
     afterEach(function() {
         sinon.restore();
@@ -30,7 +30,7 @@ describe('Logger', function() {
             sinon.stub(process, 'env').value({ F5_SDK_LOG_LEVEL: logLevel.toUpperCase() });
 
             logger[logLevel]('msg');
-            assert.deepStrictEqual(mockLog.getCall(0).args, ['msg', logLevel.toUpperCase()]);
+            assert.deepStrictEqual(mockLog.getCall(0).args, [logLevel.toUpperCase(), 'msg']);
         });
     });
 

@@ -8,13 +8,25 @@
 
 'use strict';
 
+import { inspect } from 'util';
+
 import * as constants from './constants';
+
 const LOG_LEVELS = {
-    error: 5,
+    error: 3,
     warning: 4,
-    info: 3,
-    debug: 2
+    info: 6,
+    debug: 7
 };
+
+/**
+ * logLevel definitions
+ */
+export type logLevels = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR'
+
+
+// levels have been updated to allign better with typical syslog
+// https://support.solarwinds.com/SuccessCenter/s/article/Syslog-Severity-levels?language=en_US
 
 /**
  *
@@ -40,40 +52,69 @@ export default class Logger {
     }
 
     /**
+     * Log debug message
+     */
+    debug(...msg: [unknown, ...unknown[]]): void {
+        if (LOG_LEVELS.debug <= LOG_LEVELS[this._checkLogLevel()]) {
+            this.log('DEBUG', ...msg);
+        }
+    }
+    // debug(msg: string): void {
+    //     if (LOG_LEVELS.debug <= LOG_LEVELS[this._checkLogLevel()]) {
+    //         this._log(msg, 'DEBUG');
+    //     }
+    // }
+    
+    /**
      * Log informational message
      */
-    error(msg: string): void {
-        if (LOG_LEVELS.error >= LOG_LEVELS[this._checkLogLevel()]) {
-            this._log(msg, 'ERROR');
+    info(...msg: [unknown, ...unknown[]]): void {
+        if (LOG_LEVELS.info >= LOG_LEVELS[this._checkLogLevel()]) {
+            this.log('INFO', ...msg);
+            // this.log(msg, 'INFO');
         }
     }
 
     /**
      * Log warning message
      */
-    warning(msg: string): void {
-        if (LOG_LEVELS.warning >= LOG_LEVELS[this._checkLogLevel()]) {
-            this._log(msg, 'WARNING');
+    warning(...msg: [unknown, ...unknown[]]): void {
+        if (LOG_LEVELS.warning <= LOG_LEVELS[this._checkLogLevel()]) {
+            // this.log(msg, 'WARNING');
+            this.log('WARNING', ...msg);
         }
     }
 
+
     /**
-     * Log informational message
+     * Log error message
      */
-    info(msg: string): void {
-        if (LOG_LEVELS.info >= LOG_LEVELS[this._checkLogLevel()]) {
-            this._log(msg, 'INFO');
+    error(...msg: [unknown, ...unknown[]]): void {
+        if (LOG_LEVELS.error <= LOG_LEVELS[this._checkLogLevel()]) {
+            // this.log(msg, 'ERROR');
+            this.log('ERROR', ...msg);
         }
     }
 
-    /**
-     * Log debug message
+
+    /** base log function
+     * 
      */
-    debug(msg: string): void {
-        if (LOG_LEVELS.debug >= LOG_LEVELS[this._checkLogLevel()]) {
-            this._log(msg, 'DEBUG');
-        }
+    log(level: logLevels, ...messageParts: unknown[]): void {
+        
+        // join all the log message parts
+        const message = messageParts.map(this.stringify).join(' ');
+        
+        // make a date
+        const dateTime = new Date().toISOString();
+        
+        // put everything together
+        console.log(`[${dateTime}] ${level}: ${message}`);
+
+        // todo: setup options to have the logger output to console, and/or hold the logs in a buffer
+        
     }
+
 
     private _checkLogLevel(): string {
         const logLevels = Object.keys(LOG_LEVELS);
@@ -85,7 +126,13 @@ export default class Logger {
         return 'info';
     }
 
-    _log(msg: string, level: string): void {
-        console.log(`${level} -`, msg);
+    private stringify(val: unknown): string {
+        if (typeof val === 'string') { return val; }
+        return inspect(val, {
+            colors: false,
+            depth: 6, // heuristic
+        });
     }
+
+
 }
