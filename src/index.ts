@@ -8,9 +8,13 @@
 
 'use strict';
 
-export { F5Client } from '../src/bigip/f5Client';
+export { F5Client } from './bigip/f5Client';
 
-export * as extHttp from './utils/extHttp'
+export * as extHttp from './utils/extHttp';
+
+// re-export all the individual modules
+
+// export * as fixtureUtils from '../tests/fixtureUtils'
 
 export { IhealthClient } from './iHealthClient'
 

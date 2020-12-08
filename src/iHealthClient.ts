@@ -11,7 +11,7 @@
 
 'use strict';
 
-import { makeRequest } from "./utils/f5Https";
+// import { makeRequest } from "./utils/f5Https";
 
 
 
@@ -63,7 +63,7 @@ export class IhealthClient {
             this.login();
         }
 
-        const resp = makeRequest(this._api_host, '/qkview-analyzer/api/qkviews/', )
+        // const resp = makeRequest(this._api_host, '/qkview-analyzer/api/qkviews/', )
     }
 
     /**

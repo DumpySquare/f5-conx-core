@@ -10,7 +10,7 @@
 'use strict';
 
 import { Timings } from "@szmarczak/http-timer/dist/source";
-import { AxiosResponse, Method, ResponseType } from "axios";
+import { AxiosRequestConfig, AxiosResponse, Method, ResponseType } from "axios";
 
 
 
@@ -23,32 +23,43 @@ export type F5HttpRequest = {
     validateStatus?: any,
     advancedReturn?: boolean,
     contentType?: string,
-    responseType?: ResponseType
+    responseType?: ResponseType,
+    uuid?: string
 }
 
-export interface AxiosResponseWithTimings extends AxiosResponse {
+// export interface AxiosResponseWithTimings extends AxiosResponse {
+//     timings?: Timings;
+// }
+
+
+export interface HttpResponse extends AxiosResponse {
     timings?: Timings;
+    config: uuidAxiosRequestConfig
 }
 
-/**
- * custom http response with timings, based on axios response
- */
-export type HttpResponse<T = any> = {
-    data?: T;
-    status: number;
-    statusText?: string;
-    headers?: unknown;
-    config?: {
-        url: string;
-        httpsAgent: {
-            protocol: string
-        }
-    }
-    request?: {
-        url: string;
-        method: string;
-        headers: unknown;
-        protocol: string;
-        timings: Timings;
-    };
-};
+export interface uuidAxiosRequestConfig extends AxiosRequestConfig {
+    uuid?: string
+}
+
+// /**
+//  * custom http response with timings, based on axios response
+//  */
+// export type HttpResponse<T = any> = {
+//     data?: T;
+//     status: number;
+//     statusText?: string;
+//     headers?: unknown;
+//     config?: {
+//         url: string;
+//         httpsAgent: {
+//             protocol: string
+//         }
+//     }
+//     request: {
+//         url: string;
+//         method: string;
+//         headers: unknown;
+//         protocol: string;
+//         timings: Timings;
+//     };
+// };

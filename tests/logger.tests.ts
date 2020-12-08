@@ -25,9 +25,14 @@ describe('Logger', function() {
         sinon.restore();
     });
 
+    // remove any logging env vars
+    process.env.F5_CONX_CORE_LOG_LEVEL = undefined;
+    process.env.F5_CONX_CORE_LOG_BUFFER = undefined;
+    process.env.F5_CONX_CORE_LOG_CONSOLE = undefined;
+
     ['error', 'warning', 'info', 'debug'].forEach((logLevel) => {
         it(`should log ${logLevel} message`, function() {
-            sinon.stub(process, 'env').value({ F5_SDK_LOG_LEVEL: logLevel.toUpperCase() });
+            sinon.stub(process, 'env').value({ F5_CONX_CORE_LOG_LEVEL: logLevel.toUpperCase() });
 
             logger[logLevel]('msg');
             assert.deepStrictEqual(mockLog.getCall(0).args, [logLevel.toUpperCase(), 'msg']);
@@ -35,14 +40,14 @@ describe('Logger', function() {
     });
 
     it('should not log a message of a lower level', function() {
-        sinon.stub(process, 'env').value({ F5_SDK_LOG_LEVEL: 'ERROR' });
+        sinon.stub(process, 'env').value({ F5_CONX_CORE_LOG_LEVEL: 'ERROR' });
 
         logger.warning('msg');
         assert.strictEqual(mockLog.called, false);
     });
 
     it('should log info messages by default', function() {
-        sinon.stub(process, 'env').value({ F5_SDK_LOG_LEVEL: undefined });
+        sinon.stub(process, 'env').value({ F5_CONX_CORE_LOG_LEVEL: undefined });
 
         logger.info('msg');
         assert.strictEqual(mockLog.called, true);

@@ -229,13 +229,19 @@ describe('F5Device UCS integration tests - ipv6', function () {
         nockScope
             .get(`${F5DownloadPaths.ucs.uri}/${tmpUcs}`)
             .replyWithFile(200, filePath);
-        const resp = await f5Client.ucs.download(tmpUcs, tmp);
+
+        let resp;
+        try {
+            resp = await f5Client.ucs.download(tmpUcs, tmp);
+        } catch (e) {
+            debugger;
+        }
 
         // assert that the file exists
-        assert.ok(fs.existsSync(resp.data.path));
+        assert.ok(fs.existsSync(resp.data.file));
 
         // now delete the file
-        fs.unlinkSync(resp.data.path);
+        fs.unlinkSync(resp.data.file);
     });
 
 
@@ -295,16 +301,16 @@ describe('F5Device UCS integration tests - ipv6', function () {
         }
 
         // assert that the filePath we got back is what we expect
-        assert.deepStrictEqual(resp.data.path, tmp);
+        assert.deepStrictEqual(resp.data.file, tmp);
 
         // assert that the response included an expected file name format
-        assert.ok(/\w+.ucs/.test(resp.data.path));
+        assert.ok(/\w+.ucs/.test(resp.data.file));
 
         // assert that the file exists
-        assert.ok(fs.existsSync(resp.data.path));
+        assert.ok(fs.existsSync(resp.data.file));
 
         // now delete the file
-        fs.unlinkSync(resp.data.path);
+        fs.unlinkSync(resp.data.file);
     });
 
 });

@@ -48,6 +48,30 @@ describe('http client tests - ipv6', function () {
         nock.cleanAll();
     });
 
+    // it('connect/discover - not reachable', async function () {
+    //     nock(`https://1.1.1.1`)
+    //         .post('/mgmt/shared/authn/login')
+    //         .reply(200, (uri, reqBody: AuthTokenReqBody) => {
+    //             return getFakeToken(reqBody.username, reqBody.loginProviderName);
+    //         })
+
+    //         /**
+    //          * setup test for device not reachable - network error
+    //          * 
+    //          * another for IP reachable but f5 info endpoint fails
+    //          */
+
+    //     let resp;
+    //     try {
+    //         resp = await f5Client.discover();
+
+    //     } catch (e) {
+    //         debugger;
+    //     }
+    //     assert.deepStrictEqual(resp.data, { foo: 'bar' })
+    //     await f5Client.clearLogin();
+    // });
+
     it('should make basic request', async function () {
         nock(`https://${ipv6Host}`)
             .post('/mgmt/shared/authn/login')
@@ -57,8 +81,14 @@ describe('http client tests - ipv6', function () {
             .get('/foo')
             .reply(200, { foo: 'bar' });
 
-        
-        const resp = await f5Client.https('/foo');
+        let resp;
+        try {
+            resp = await f5Client.https('/foo');
+
+        } catch (e) {
+            const log = f5Client.logger.journal
+            debugger;
+        }
         assert.deepStrictEqual(resp.data, { foo: 'bar' })
         await f5Client.clearLogin();
     });
@@ -90,15 +120,80 @@ describe('http client tests - ipv6', function () {
     });
 
 
-    it('extending ipv6 - discovery', async function () {
+    it('extending ipv6 - discovery - nothing installed', async function () {
         nock(`https://${ipv6Host}:8443`)
             .post('/mgmt/shared/authn/login')
             .reply(200, (uri, reqBody: AuthTokenReqBody) => {
                 return getFakeToken(reqBody.username, reqBody.loginProviderName);
             })
 
-            .get('/foo')
-            .reply(200, { foo: 'bar' })
+            .get('/mgmt/shared/identified-devices/config/device-info')
+            .reply(200, deviceInfo)
+
+            .get(localAtcMetadata.components.fast.endpoints.info.uri)
+            .reply(404, {
+                message: `Public URI path not registered: ${localAtcMetadata.components.fast.endpoints.info.uri}`,
+            })
+            
+            .get(localAtcMetadata.components.as3.endpoints.info.uri)
+            .reply(404, {
+                message: `Public URI path not registered: ${localAtcMetadata.components.as3.endpoints.info.uri}`,
+            })
+            
+            .get(localAtcMetadata.components.do.endpoints.info.uri)
+            .reply(404, {
+                message: `Public URI path not registered: ${localAtcMetadata.components.do.endpoints.info.uri}`,
+              })
+
+            .get(localAtcMetadata.components.ts.endpoints.info.uri)
+            .reply(404, {
+                message: `Public URI path not registered: ${localAtcMetadata.components.ts.endpoints.info.uri}`,
+              })
+
+            .get(localAtcMetadata.components.cf.endpoints.info.uri)
+            .reply(404, {
+                message: `Public URI path not registered: ${localAtcMetadata.components.cf.endpoints.info.uri}`,
+              })
+
+        // create a custom mgmtClient so we can inject/test port/provider
+        const dClient = new F5Client(
+            ipv6Host,
+            'admin',
+            'admin',
+            {
+                port: 8443,
+                provider: 'tmos'
+            }
+        )
+
+        // const resp = await dClient.https('/foo');
+
+        // like to have some feedback on this function at some point (have it return something)
+        // right now it just discovers information
+        try {
+            await dClient.discover();
+        } catch (e) {
+            debugger;
+        }
+
+        // assert.deepStrictEqual(resp.data, { foo: 'bar' })
+        // assert.deepStrictEqual(dClient.fast, undefined);
+        assert.deepStrictEqual(dClient.fast, undefined);
+        assert.deepStrictEqual(dClient.as3, undefined);
+        assert.deepStrictEqual(dClient.do, undefined);
+        assert.deepStrictEqual(dClient.ts, undefined);
+        assert.deepStrictEqual(dClient.cf, undefined);
+        await dClient.clearLogin();
+    });
+
+
+
+    it('extending ipv6 - discovery', async function () {
+        nock(`https://${ipv6Host}:8443`)
+            .post('/mgmt/shared/authn/login')
+            .reply(200, (uri, reqBody: AuthTokenReqBody) => {
+                return getFakeToken(reqBody.username, reqBody.loginProviderName);
+            })
 
             .get('/mgmt/shared/identified-devices/config/device-info')
             .reply(200, deviceInfo)
@@ -129,13 +224,19 @@ describe('http client tests - ipv6', function () {
             }
         )
 
-        const resp = await dClient.https('/foo');
+        // const resp = await dClient.https('/foo');
 
         // like to have some feedback on this function at some point (have it return something)
         // right now it just discovers information
         const disc = await dClient.discover();
 
-        assert.deepStrictEqual(resp.data, { foo: 'bar' })
+        // assert.deepStrictEqual(resp.data, { foo: 'bar' })
+        assert.ok(dClient.host)
+        assert.ok(dClient.fast)
+        assert.ok(dClient.as3)
+        assert.ok(dClient.do)
+        assert.ok(dClient.ts)
+        assert.ok(dClient.cf)
         await dClient.clearLogin();
     });
 });

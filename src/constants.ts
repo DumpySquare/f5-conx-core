@@ -21,10 +21,12 @@ export const RETRY = {
 };
 
 export const ENV_VARS = {
-    LOG_LEVEL: 'F5_SDK_LOG_LEVEL'
+    LOG_LEVEL: 'F5_CONX_CORE_LOG_LEVEL'
 };
 
-
+/**
+ * Common iControl/tmos api endpoints
+ */
 export const iControlEndpoints = {
     login: '/mgmt/shared/authn/login',
     bash: '/mgmt/tm/util/bash',

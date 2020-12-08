@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /*
  * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
  * license terms. Notwithstanding anything to the contrary in the EULA, Licensee
@@ -12,6 +13,42 @@ import fs from 'fs';
 import crypto from 'crypto';
 
 import * as constants from '../constants';
+
+
+/**
+ * builds a short randon uuid - just for some randomness during testing
+ * 
+ * @param length
+ * @example 
+ * getRandomUUID(8) // returns 8pSJP15R
+ * 
+ */
+export function getRandomUUID(length: number, options?: {
+    simple: boolean
+} ): string {
+    // https://stackoverflow.com/questions/1349404/generate-random-string-characters-in-javascript
+
+    // was using the last part of a uuidv4 string, but that required an external dep to generate the uuid
+    const result = [];
+
+    const upperCase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowerCase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '1234567890';
+
+    const set = [];
+    if(options?.simple) {
+        set.push(lowerCase, numbers);
+    } else {
+        set.push(upperCase, lowerCase, numbers)
+    }
+    
+    const chars = set.join('');
+        
+    for (let i = 0; i < length; i++) {
+        result.push(chars.charAt(Math.floor(Math.random() * chars.length)));
+    }
+    return result.join('');
+}
 
 /**
  * Stringify

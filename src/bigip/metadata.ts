@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /*
  * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
  * license terms. Notwithstanding anything to the contrary in the EULA, Licensee
@@ -8,10 +9,10 @@
 
 'use strict';
 
-import assert from 'assert';
-import * as extHttp from '../../utils/extHttp';
+// import assert from 'assert';
+import * as extHttp from '../utils/extHttp';
 
-import localExtensionMetadata from './extension_metadata.json';
+import localExtensionMetadata from './atc_metadata.json';
 
 const EXTENSION_METADATA = {
     url: 'https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json'
@@ -150,7 +151,7 @@ export class MetadataClient {
         const parsedUrl = extHttp.parseUrl(EXTENSION_METADATA.url);
         try {
             const response = await extHttp.makeRequest(parsedUrl.host, parsedUrl.path);
-            this._metadata = response.data;
+            // this._metadata = response.data;
         } catch (e) {
             console.log(e);
         }

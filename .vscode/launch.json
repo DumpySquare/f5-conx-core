@@ -19,7 +19,7 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}/tests/**/*.tests.ts",
+                "${workspaceFolder}/tests/all.tests.ts",
             ],
             "internalConsoleOptions": "neverOpen",
             "protocol": "inspector",

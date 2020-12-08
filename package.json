@@ -29,6 +29,7 @@
     },
     "scripts": {
         "lint": "tsc --noEmit && eslint 'src/**/*.{js,ts,tsx}' 'tests/**/*.{js,ts,tsx}'",
+        "watch": "tsc -watch -p ./",
         "test": "nyc mocha -r ts-node/register \"tests/**/*.tests.ts\"",
         "build-code-docs": "typedoc --out code_docs src",
         "build-package": "tsc"

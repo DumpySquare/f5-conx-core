@@ -85,9 +85,9 @@ describe('F5Device file upload/download integration tests - ipv6', function () {
             .replyWithFile(200, filePath);
 
         const resp = await f5Client.download(rpm, tmp, 'ISO');    // download file
-
-        assert.ok(fs.existsSync(resp.data.path))           // confirm/assert file is there
-        fs.unlinkSync(resp.data.path);                     // remove tmp file
+        // debugger;
+        assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
+        fs.unlinkSync(resp.data.file);                     // remove tmp file
         await f5Client.clearLogin();
     });
 
@@ -103,8 +103,8 @@ describe('F5Device file upload/download integration tests - ipv6', function () {
 
         const resp = await f5Client.download(rpm, tmp, 'UCS');    // download file
 
-        assert.ok(fs.existsSync(resp.data.path))           // confirm/assert file is there
-        fs.unlinkSync(resp.data.path);                     // remove tmp file
+        assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
+        fs.unlinkSync(resp.data.file);                     // remove tmp file
         await f5Client.clearLogin();
     });
 
@@ -120,8 +120,8 @@ describe('F5Device file upload/download integration tests - ipv6', function () {
 
         const resp = await f5Client.download(rpm, tmp, 'QKVIEW');    // download file
 
-        assert.ok(fs.existsSync(resp.data.path))           // confirm/assert file is there
-        fs.unlinkSync(resp.data.path);                     // remove tmp file
+        assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
+        fs.unlinkSync(resp.data.file);                     // remove tmp file
         await f5Client.clearLogin();
     });
 
@@ -142,9 +142,9 @@ describe('F5Device file upload/download integration tests - ipv6', function () {
             .post(`/mgmt/shared/file-transfer/uploads/${rpm}`)
             .reply(200, { foo: 'bar' });
 
-        const response = await f5Client.upload(filePath);
-        assert.deepStrictEqual(response.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
-        assert.ok(response.data.bytes);  // just asserting that we got a value here, should be a number
+        const resp = await f5Client.upload(filePath);
+        assert.deepStrictEqual(resp.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
+        assert.ok(resp.data.bytes);  // just asserting that we got a value here, should be a number
         await f5Client.clearLogin();
     });
 });

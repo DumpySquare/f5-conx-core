@@ -8,8 +8,11 @@
 
 import { F5Client } from '../src/bigip/f5Client';
 import { Token } from '../src/bigip/bigipModels';
+import { getRandomUUID } from '../src/utils/misc'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { localDev } from './localTestDevice'
+
+
 
 export const defaultHost = '192.0.2.1';
 export const defaultPort = 443;
@@ -28,6 +31,11 @@ export function getF5Client(
         port?: number,
         provider?: string
     }): F5Client {
+
+    // set env vars
+    process.env.F5_CONX_CORE_LOG_LEVEL = "debug"
+    process.env.F5_CONX_CORE_LOG_BUFFER = "true"
+    process.env.F5_CONX_CORE_LOG_CONSOLE = "false"
 
     const newOpts: {
         port?: number,
@@ -75,25 +83,7 @@ export function getRandomInt(min: number, max: number): number {
 }
 
 
-/**
- * builds a short randon uuid - just for some randomness during testing
- * 
- * @param length
- * @example 
- * getRandomUUID(8) // returns 8pSJP15R
- * 
- */
-export function getRandomUUID(length: number): string {
-    // https://stackoverflow.com/questions/1349404/generate-random-string-characters-in-javascript
 
-    // was using the last part of a uuidv4 string, but that required an external dep to generate the uuid
-    const result = [];
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (let i = 0; i < length; i++) {
-        result.push(chars.charAt(Math.floor(Math.random() * chars.length)));
-    }
-    return result.join('');
-}
 
 
 

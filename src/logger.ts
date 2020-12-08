@@ -24,6 +24,13 @@ const LOG_LEVELS = {
  */
 export type logLevels = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR'
 
+export enum LogLevel {
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
+
 
 // levels have been updated to allign better with typical syslog
 // https://support.solarwinds.com/SuccessCenter/s/article/Syslog-Severity-levels?language=en_US
@@ -33,21 +40,44 @@ export type logLevels = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR'
  * Basic Example:
  * 
  * ```bash
- * export F5_SDK_LOG_LEVEL='DEBUG'
+ * export F5_CONX_CORE_LOG_LEVEL='DEBUG'
  * ```
  */
 export default class Logger {
+    journal = [];
+
+    /**
+     * buffer log messages
+     * 
+     * @default false
+     */
+    buffer: boolean = false;
+    /**
+     * output log messages to console
+     * @default true
+     */
+    console: boolean = true;
     private static instance: Logger;
 
     /**
      * Get logger instance (singleton)
      * 
+     * @param options.buffer enable/disable buffering
+     * @param options.console enable/disable output to console.log
      * @returns logger instance
      */
-    static getLogger(): Logger {
+    static getLogger(options?: { 
+        // buffer?: string, 
+        // console?: string 
+    }): Logger {
         if (!Logger.instance) {
             Logger.instance = new Logger();
         }
+
+        // assign switches
+        // Logger.instance.buffer = options?.buffer;
+        // Logger.instance.console = options?.console;
+
         return Logger.instance;
     }
 
@@ -105,14 +135,25 @@ export default class Logger {
         // join all the log message parts
         const message = messageParts.map(this.stringify).join(' ');
         
-        // make a date
+        // make timestamp
         const dateTime = new Date().toISOString();
         
         // put everything together
-        console.log(`[${dateTime}] ${level}: ${message}`);
-
-        // todo: setup options to have the logger output to console, and/or hold the logs in a buffer
+        const log = `[${dateTime}] [${level}]: ${message}`
         
+        if (this.buffer) {
+            // todo: put some sort of limit on the buffer size (max 500?)
+            this.journal.push(log);
+        }
+        
+        if (this.console) {
+            console.log(log);
+        }
+
+    }
+
+    getLogs(): string[] {
+        return this.journal;
     }
 
 
@@ -120,10 +161,21 @@ export default class Logger {
         const logLevels = Object.keys(LOG_LEVELS);
         const logLevelFromEnvVar = process.env[constants.ENV_VARS.LOG_LEVEL];
 
+        const a = (process.env?.F5_CONX_CORE_LOG_BUFFER == 'true');
+        const b = (process.env?.F5_CONX_CORE_LOG_CONSOLE == 'true');
+
+        if(process.env.F5_CONX_CORE_LOG_BUFFER){
+            this.buffer = (process.env?.F5_CONX_CORE_LOG_BUFFER == 'true');
+        }
+        if (process.env.F5_CONX_CORE_LOG_CONSOLE) {
+            this.console = (process.env.F5_CONX_CORE_LOG_CONSOLE == 'true');
+        }
+
         if (logLevelFromEnvVar && logLevels.includes(logLevelFromEnvVar.toLowerCase())) {
             return logLevelFromEnvVar.toLowerCase();
         }
         return 'info';
+
     }
 
     private stringify(val: unknown): string {

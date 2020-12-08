@@ -11,7 +11,7 @@
 
 import { AtcMetaData, AtcInfo, F5InfoApi, F5DownLoad } from "./bigipModels";
 import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
-import { MetadataClient } from "./extension/metadata";
+// import { MetadataClient } from "./metadata";
 import Logger from '../logger'
 
 import { MgmtClient } from "./mgmtClient";
@@ -46,16 +46,16 @@ import localAtcMetadata from './atc_metadata.json';
 */
 export class F5Client {
     protected _mgmtClient: MgmtClient;
-    protected _metadataClient: MetadataClient;
+    // protected _metadataClient: MetadataClient;
     protected _atcMetaData: AtcMetaData = localAtcMetadata;
-    host: F5InfoApi;
-    ucs: UcsClient;
+    host: F5InfoApi | undefined;
+    ucs: UcsClient | undefined;
     fast: FastClient | undefined;
     as3: As3Client | undefined;
     do: DoClient | undefined;
     ts: TsClient | undefined;
     cf: CfClient | undefined;
-    logger: Logger | unknown;
+    logger: Logger;
 
     constructor(
         host: string,
@@ -87,7 +87,7 @@ export class F5Client {
      * @returns request response
      */
     async https(uri: string, options?: F5HttpRequest): Promise<HttpResponse> {
-        return await this._mgmtClient.makeRequest(uri, options ? options : undefined)
+        return await this._mgmtClient.makeRequest(uri, options)
     }
 
 
@@ -109,54 +109,45 @@ export class F5Client {
      */
     async discover(): Promise<void> {
 
-        
-        // try tmos info endpoint
-        // try fast info endpoint
-        // try as3 info endpoint
-        // try do info endpoint
-        // try ts info endpoint
-        // try cf info endpoint
-        
         // get device info
         await this._mgmtClient.makeRequest('/mgmt/shared/identified-devices/config/device-info')
-        .then(resp => this.host = resp.data)
+            .then(resp => {
 
-        // Assign some details to the mgmtClient so they can be used in other areas
-        this._mgmtClient.hostname = this.host.hostname;
-        this._mgmtClient.mgmtIP = this.host.managementAddress;
-        this._mgmtClient.version = this.host.version;
+                // assign details to this and mgmtClient class
+                this.host = resp.data
+                this._mgmtClient.hostInfo = resp.data
+            })
+
 
         // setup ucsClient
         this.ucs = new UcsClient(this._mgmtClient)
-        
+
         // setup qkviewClient
         // this.qkview = new QkviewClient(this._mgmtClient)
-                
-        
-        
+
+
+
         // check FAST installed by getting verion info
         await this._mgmtClient.makeRequest(this._atcMetaData.components.fast.endpoints.info.uri)
             .then(resp => {
-                // todo: build fast client class instantiate here
                 this.fast = new FastClient(resp.data as AtcInfo, this._atcMetaData.components.fast, this._mgmtClient);
             })
-            .catch( () => {
-                //do nothing...
-                // debugger;
-            });
-
+            .catch(() => {
+                // do nothing... but catch the error from bubbling up and causing other issues
+                // this.logger.debug(err);
+            })
 
         // check AS3 installed by getting verion info
         await this._mgmtClient.makeRequest(this._atcMetaData.components.as3.endpoints.info.uri)
-            .then( resp => {
+            .then(resp => {
                 // if http 2xx, create as3 client
                 // notice the recast of resp.data type of "unknown" to "AtcInfo"
                 this.as3 = new As3Client(resp.data as AtcInfo, this._atcMetaData.components.as3, this._mgmtClient);
             })
-            .catch( () => {
-                //do nothing...
-                // debugger;
-            });
+            .catch(() => {
+                // do nothing... but catch the error from bubbling up and causing other issues
+                // this.logger.debug(err);
+            })
 
 
         // check DO installed by getting verion info
@@ -164,10 +155,10 @@ export class F5Client {
             .then(resp => {
                 this.do = new DoClient(resp.data[0] as AtcInfo, this._atcMetaData.components.do, this._mgmtClient);
             })
-            .catch( () => {
-                //do nothing...
-                // debugger;
-            });
+            .catch(() => {
+                // do nothing... but catch the error from bubbling up and causing other issues
+                // this.logger.debug(err);
+            })
 
 
         // check TS installed by getting verion info
@@ -175,10 +166,10 @@ export class F5Client {
             .then(resp => {
                 this.ts = new TsClient(resp.data as AtcInfo, this._atcMetaData.components.ts, this._mgmtClient);
             })
-            .catch( () => {
-                //do nothing...
-                // debugger;
-            });
+            .catch(() => {
+                // do nothing... but catch the error from bubbling up and causing other issues
+                // this.logger.debug(err);
+            })
 
 
         // check CF installed by getting verion info
@@ -186,10 +177,10 @@ export class F5Client {
             .then(resp => {
                 this.cf = new CfClient(resp.data as AtcInfo, this._atcMetaData.components.cf, this._mgmtClient);
             })
-            .catch( () => {
-                //do nothing...
-                // debugger;
-            });
+            .catch(() => {
+                // do nothing... but catch the error from bubbling up and causing other issues
+                // this.logger.debug(err);
+            })
 
 
         return;
@@ -252,7 +243,7 @@ export class F5Client {
      * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
      * todo: refresh this file with every packages release via git actions or package.json script
      */
-    async refreshMetaData(): Promise<HttpResponse> {
+    async refreshMetaData(): Promise<void> {
 
         return;
     }
