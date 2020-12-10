@@ -29,3 +29,12 @@ export const authToken = {
     "generation": 0,
     "lastUpdateMicros": 0
 }
+
+export const failedAuthResp = {
+    code: 401,
+    message: "Authentication failed.",
+    originalRequestBody: "{\"username\":\"admin\",\"loginProviderName\":\"local\",\"generation\":0,\"lastUpdateMicros\":0}",
+    referer: "192.168.200.20",
+    restOperationId: 36136900,
+    kind: ":resterrorresponse",
+}

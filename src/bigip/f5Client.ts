@@ -9,6 +9,8 @@
 
 'use strict';
 
+import { EventEmitter } from 'events';
+
 import { AtcMetaData, AtcInfo, F5InfoApi, F5DownLoad } from "./bigipModels";
 import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
 // import { MetadataClient } from "./metadata";
@@ -56,6 +58,7 @@ export class F5Client {
     ts: TsClient | undefined;
     cf: CfClient | undefined;
     logger: Logger;
+    events: EventEmitter;
 
     constructor(
         host: string,
@@ -66,13 +69,17 @@ export class F5Client {
             provider?: string,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             logger?: any,
+            // eventEmitter?: EventEmitter
         }
     ) {
+        // create event emitter and pass to mgmtClient
+        this.events = new EventEmitter();
         this._mgmtClient = new MgmtClient(
             host,
             user,
             password,
-            options ? options : undefined
+            this.events,
+            options
         )
         // assign incoming logger reference, else assign local
         this.logger = options?.logger ? options.logger : Logger.getLogger();

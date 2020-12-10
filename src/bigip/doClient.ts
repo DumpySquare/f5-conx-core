@@ -14,18 +14,18 @@ import { MgmtClient } from "./mgmtClient";
 
 
 export class DoClient {
-    protected _mgmtClient: MgmtClient;
-    protected _metaData: As3MetaData;
-    protected _version: AtcInfo;
+    mgmtClient: MgmtClient;
+    metaData: As3MetaData;
+    version: AtcInfo;
 
     constructor(
         versions: AtcInfo,
         metaData: As3MetaData,
         mgmtClient: MgmtClient
     ) {
-        this._version = versions;
-        this._metaData = metaData;
-        this._mgmtClient = mgmtClient;
+        this.version = versions;
+        this.metaData = metaData;
+        this.mgmtClient = mgmtClient;
     }
 
 

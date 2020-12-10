@@ -14,18 +14,18 @@ import { MgmtClient } from "./mgmtClient";
 
 
 export class FastClient {
-    protected _mgmtClient: MgmtClient;
-    protected _metaData: FastMetaData;
-    protected _version: AtcInfo;
+    mgmtClient: MgmtClient;
+    metaData: FastMetaData;
+    version: AtcInfo;
 
     constructor(
         versions: AtcInfo,
         metaData: FastMetaData,
         mgmtClient: MgmtClient
     ) {
-        this._version = versions;
-        this._metaData = metaData;
-        this._mgmtClient = mgmtClient;
+        this.version = versions;
+        this.metaData = metaData;
+        this.mgmtClient = mgmtClient;
     }
 
 

@@ -11,6 +11,7 @@
 import path from 'path';
 import https from 'https';
 import * as fs from 'fs';
+import { EventEmitter } from 'events';
 
 import axios, { AxiosRequestConfig } from 'axios';
 import timer from '@szmarczak/http-timer/dist/source';
@@ -53,6 +54,7 @@ export class MgmtClient {
     port: number;
     hostInfo: F5InfoApi | undefined;
     logger: Logger;
+    events: EventEmitter;
     protected _user: string;
     protected _password: string;
     protected _provider: string;
@@ -60,7 +62,7 @@ export class MgmtClient {
     protected _tokenTimeout: number | undefined;
     protected _tokenIntervalId: NodeJS.Timeout | undefined;
     private _asyncRetry = {
-        max: 20,
+        max: 30,
         interval: 3
     }
 
@@ -72,10 +74,11 @@ export class MgmtClient {
         host: string,
         user: string,
         password: string,
+        eventEmitter: EventEmitter,
         options?: {
-            port?: number;
-            provider?: string;
-            logger?: Logger;
+            port?: number,
+            provider?: string,
+            logger?: Logger,
         }
     ) {
         this.host = host;
@@ -84,6 +87,7 @@ export class MgmtClient {
         this.port = options?.port || 443;
         this._provider = options?.provider || 'tmos';
         this.logger = options?.logger ? options.logger : Logger.getLogger();
+        this.events = eventEmitter;
     }
 
 
@@ -99,6 +103,7 @@ export class MgmtClient {
 
 
 
+    
     /**
      * sets/gets/refreshes auth token
      */
@@ -119,8 +124,7 @@ export class MgmtClient {
                 rejectUnauthorized: false
             }),
             transport
-        }
-        )
+        })
             .then(resp => {
 
                 // capture entire token
@@ -129,11 +133,24 @@ export class MgmtClient {
                 this._tokenTimeout = resp.data.token.timeout;
 
                 this.tokenTimer();  // start token timer
+                
+                return;
 
             })
             .catch(err => {
 
-                this.logger.error(`token request failed: ${err.status} - ${err.statusText}`);
+                // if we got a failed password response
+                if (
+                    err.response.status === 401 && 
+                    err.response.data.message === 'Authentication failed.'
+                    ) {
+
+                    // fire failed password event so upper logic can clear details
+                    // this.events.emit('failedAuth');
+                    this.events.emit('failedAuth', err.response.data);
+                }
+
+                this.logger.error(`token request failed: ${err.message}`);
                 
                 // todo: add non http error details to log (stringified)
                 // return err;
@@ -144,30 +161,6 @@ export class MgmtClient {
 
     }
 
-
-
-
-
-    /**
-     * bigip auth token lifetime countdown
-     * will clear auth token details when finished
-     * prompting the next http call to get a new token
-     */
-    private async tokenTimer(): Promise<void> {
-
-        this.logger.debug(`Starting token timer: ${this._tokenTimeout}`);
-
-        this._tokenIntervalId = setInterval(() => {
-            this._tokenTimeout--;
-            if (this._tokenTimeout <= 0) {
-                clearInterval(this._tokenIntervalId);
-                this._token = undefined; // clearing token details should get a new token
-                this.logger.debug('authToken expired:', this._tokenTimeout);
-            }
-            // run timer a little fast to pre-empt update
-        }, 999);
-
-    }
 
 
 
@@ -216,15 +209,16 @@ export class MgmtClient {
         // merge incoming options into requestDefaults object
         options = Object.assign(requestDefaults, options)
 
+        // inject a uuid if we don't have one already
         options.uuid = options?.uuid ? options.uuid : getRandomUUID(4, { simple: true })
 
-        this.logger.debug(`HTTPS-REQUEST [${options.uuid}]: ${options?.method || 'GET'} -> ${this.host}:${this.port}${uri}`);
+        this.logger.debug(`HTTPS-REQU [${options.uuid}]: ${options?.method || 'GET'} -> ${this.host}:${this.port}${uri}`);
 
         return await axios(options)
             .then(resp => {
 
                 // log response
-                this.logger.debug(`HTTPS-RESPONSE [${options.uuid}]: ${resp.status} - ${resp.statusText}`);
+                this.logger.debug(`HTTPS-RESP [${options.uuid}]: ${resp.status} - ${resp.statusText}`);
 
                 return resp;
             })
@@ -234,7 +228,7 @@ export class MgmtClient {
                 if (err.response) {
                     // The request was made and the server responded with a status code
                     // that falls out of the range of 2xx
-                    this.logger.debug(`HTTPS-RESPONSE [${options.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
+                    this.logger.debug(`HTTPS-RESP [${options.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
                     // return Promise.reject(err.response)
 
                 } else if (err.request) {
@@ -262,6 +256,35 @@ export class MgmtClient {
                 
             })
     }
+
+
+
+
+
+    /**
+     * bigip auth token lifetime countdown
+     * will clear auth token details when finished
+     * prompting the next http call to get a new token
+     */
+    private async tokenTimer(): Promise<void> {
+
+        this.logger.debug(`Starting token timer: ${this._tokenTimeout}`);
+
+        this._tokenIntervalId = setInterval(() => {
+            this._tokenTimeout--;
+            if (this._tokenTimeout <= 0) {
+                clearInterval(this._tokenIntervalId);
+                this._token = undefined; // clearing token details should get a new token
+                this.logger.debug('authToken expired:', this._tokenTimeout);
+            }
+            // run timer a little fast to pre-empt update
+        }, 999);
+
+    }
+
+
+
+
 
 
     async followAsync(url: string): Promise<HttpResponse> {
@@ -326,7 +349,7 @@ export class MgmtClient {
             await this.getToken();
         }
 
-        const uuid = getRandomUUID(4, { simple: true });
+        // const uuid = getRandomUUID(4, { simple: true });
 
         // swap out download url as needed (ternary method)
         const url
@@ -382,7 +405,7 @@ export class MgmtClient {
             await this.getToken();
         }
 
-        const uuid = getRandomUUID(4, { simple: true });
+        // const uuid = getRandomUUID(4, { simple: true });
 
         let response: HttpResponse;
         const fileName = path.parse(localSourcePathFilename).base;

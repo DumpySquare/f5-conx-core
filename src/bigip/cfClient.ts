@@ -14,18 +14,18 @@ import { MgmtClient } from "./mgmtClient";
 
 
 export class CfClient {
-    protected _mgmtClient: MgmtClient;
-    protected _metaData: CfMetaData;
-    protected _version: AtcInfo;
+    mgmtClient: MgmtClient;
+    metaData: CfMetaData;
+    version: AtcInfo;
 
     constructor(
         versions: AtcInfo,
         metaData: CfMetaData,
         mgmtClient: MgmtClient
     ) {
-        this._version = versions;
-        this._metaData = metaData;
-        this._mgmtClient = mgmtClient;
+        this.version = versions;
+        this.metaData = metaData;
+        this.mgmtClient = mgmtClient;
     }
 
 

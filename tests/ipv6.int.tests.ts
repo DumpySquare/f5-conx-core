@@ -29,6 +29,7 @@ import {
 import { getFakeToken } from './fixtureUtils';
 import localAtcMetadata from '../src/bigip/atc_metadata.json';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
+import { failedAuthResp } from './artifacts/authToken';
 
 
 
@@ -37,7 +38,7 @@ import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 
 describe('http client tests - ipv6', function () {
     let f5Client: F5Client;
-
+ 
     beforeEach(function () {
         f5Client = getF5Client({ ipv6: true });
     });
@@ -71,6 +72,35 @@ describe('http client tests - ipv6', function () {
     //     assert.deepStrictEqual(resp.data, { foo: 'bar' })
     //     await f5Client.clearLogin();
     // });
+
+    it('fail auth', async function () {
+        nock(`https://${ipv6Host}`)
+            .post('/mgmt/shared/authn/login')
+            .reply(401, failedAuthResp)
+            
+        let event: any;
+        let log =[];
+        f5Client.events.on('failedAuth', msg => {
+            event = msg;
+        });
+        
+        await f5Client.https('/foo')
+        // .then( resp => {
+        //  // look at response
+        // })
+        .catch( err => {
+            // if this test failed, let's see why
+            log = f5Client.logger.journal;
+            // debugger;
+        })
+
+        assert.ok(event, 'should have emitted a failed auth event')
+        assert.ok(log.length > 0, 'should have some logs from failed auth')
+        
+
+        await f5Client.clearLogin();
+    });
+
 
     it('should make basic request', async function () {
         nock(`https://${ipv6Host}`)

@@ -12,18 +12,18 @@ import { TsMetaData, AtcInfo } from "./bigipModels";
 import { MgmtClient } from "./mgmtClient";
 
 export class TsClient {
-    protected _mgmtClient: MgmtClient;
-    protected _metaData: TsMetaData;
-    protected _version: AtcInfo;
+    mgmtClient: MgmtClient;
+    metaData: TsMetaData;
+    version: AtcInfo;
     
     constructor (
         versions: AtcInfo,
         metaData: TsMetaData,
         mgmtClient: MgmtClient
     ) {
-        this._version = versions;
-        this._metaData = metaData;
-        this._mgmtClient = mgmtClient;
+        this.version = versions;
+        this.metaData = metaData;
+        this.mgmtClient = mgmtClient;
     }
 
     async get (): Promise<string> {
