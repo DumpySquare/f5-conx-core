@@ -9,12 +9,11 @@
 
 'use strict';
 
+import path from "path";
 
 import { HttpResponse } from "../utils/httpModels";
 import { MgmtClient } from "./mgmtClient";
 import { F5DownloadPaths, iControlEndpoints } from '../constants';
-import { debug } from "console";
-import { rejects } from "assert";
 
 /**
  * handles F5 UCS tasks for generating and downloading UCS files
@@ -136,6 +135,8 @@ export class UcsClient {
             //  * Example:  "commandResult":"tar: config/bigip_gtm.conf: Cannot stat: No such file or directory\ntar: config/bigip_script.conf: Cannot stat: No such file or directory\ntar: config/bigip.license: Cannot stat: No such file or directory\ntar: Exiting with failure status due to previous errors\n"
             //  */
 
+            // this._mgmtClient.logger.debug('creating mini_ucs, options:', file, options, )
+
             // run the main bash command to make the mini_ucs
             return await this._mgmtClient.makeRequest(iControlEndpoints.bash, {
                 method: 'POST',
@@ -241,6 +242,12 @@ export class UcsClient {
      * @param localDestPathFile where to put the file (including file name)
      */
     async download(fileName: string, localDestPathFile: string): Promise<HttpResponse> {
+
+        // if we only got a local path (no filename with file type suffix ".ext")
+        //  then append created file name
+        if(!localDestPathFile.includes('.')) {
+            localDestPathFile = path.join(localDestPathFile, fileName);
+        }
 
         return await this._mgmtClient.download(fileName, localDestPathFile, 'UCS');
     }

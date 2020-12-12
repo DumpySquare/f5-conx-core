@@ -61,11 +61,11 @@ export const F5DownloadPaths = {
  */
 export const F5UploadPaths = {
     iso: {
-        uri: '/mgmt/cm/autodeploy/software-image-uploads/',
-        path: '/shared/images/'
+        uri: '/mgmt/cm/autodeploy/software-image-uploads',
+        path: '/shared/images'
     },
     file: {
-        uri: '/mgmt/shared/file-transfer/uploads/',
+        uri: '/mgmt/shared/file-transfer/uploads',
         path: '/var/config/rest/downloads'
     }
 }

@@ -16,11 +16,9 @@ import { EventEmitter } from 'events';
 import axios, { AxiosRequestConfig } from 'axios';
 import timer from '@szmarczak/http-timer/dist/source';
 
-// import * as f5Https from '../utils/f5Https';
-import { Token, F5DownLoad, F5InfoApi } from './bigipModels';
+import { Token, F5DownLoad, F5Upload, F5InfoApi } from './bigipModels';
 import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
-import { F5DownloadPaths } from '../constants';
-import Logger from '../logger';
+import { F5DownloadPaths, F5UploadPaths } from '../constants';
 import { getRandomUUID } from '../utils/misc';
 
 
@@ -53,7 +51,6 @@ export class MgmtClient {
     host: string;
     port: number;
     hostInfo: F5InfoApi | undefined;
-    logger: Logger;
     events: EventEmitter;
     protected _user: string;
     protected _password: string;
@@ -74,11 +71,9 @@ export class MgmtClient {
         host: string,
         user: string,
         password: string,
-        eventEmitter: EventEmitter,
         options?: {
             port?: number,
             provider?: string,
-            logger?: Logger,
         }
     ) {
         this.host = host;
@@ -86,8 +81,15 @@ export class MgmtClient {
         this._password = password;
         this.port = options?.port || 443;
         this._provider = options?.provider || 'tmos';
-        this.logger = options?.logger ? options.logger : Logger.getLogger();
-        this.events = eventEmitter;
+        this.events = new EventEmitter;
+    }
+
+    /**
+     * 
+     * @return event emitter instance
+     */
+    getEvenEmitter(): EventEmitter {
+        return this.events;
     }
 
 
@@ -97,19 +99,20 @@ export class MgmtClient {
      */
     async clearToken(): Promise<void> {
 
+        this.events.emit('log-debug', `clearing token/timer`);
         clearInterval(this._tokenIntervalId);
-        return this._token = undefined;
+        this._token = undefined;
     }
 
 
 
-    
+
     /**
      * sets/gets/refreshes auth token
      */
     private async getToken(): Promise<void> {
 
-        this.logger.debug('getting auth token from: ', `${this.host}:${this.port}`);
+        this.events.emit('log-debug', `getting auth token from: ${this.host}:${this.port}`);
 
         return await axios({
             baseURL: `https://${this.host}:${this.port}`,
@@ -133,7 +136,7 @@ export class MgmtClient {
                 this._tokenTimeout = resp.data.token.timeout;
 
                 this.tokenTimer();  // start token timer
-                
+
                 return;
 
             })
@@ -141,18 +144,18 @@ export class MgmtClient {
 
                 // if we got a failed password response
                 if (
-                    err.response.status === 401 && 
-                    err.response.data.message === 'Authentication failed.'
-                    ) {
+                    err.response?.status === 401 &&
+                    err.response?.data.message === 'Authentication failed.'
+                ) {
 
                     // fire failed password event so upper logic can clear details
                     // this.events.emit('failedAuth');
                     this.events.emit('failedAuth', err.response.data);
                 }
 
-                this.logger.error(`token request failed: ${err.message}`);
-                
-                // todo: add non http error details to log (stringified)
+                this.events.emit('log-error', `token request failed: ${err.message}`);
+
+                // todo: add non http error details to log
                 // return err;
 
                 // reThrow the error back up the chain
@@ -195,7 +198,6 @@ export class MgmtClient {
             baseURL: `https://${this.host}:${this.port}`,
             url: uri,
             method: options?.method || undefined,
-            // port: this.port,
             headers: Object.assign(options?.headers || {}, {
                 'X-F5-Auth-Token': this._token?.token
             }),
@@ -212,23 +214,25 @@ export class MgmtClient {
         // inject a uuid if we don't have one already
         options.uuid = options?.uuid ? options.uuid : getRandomUUID(4, { simple: true })
 
-        this.logger.debug(`HTTPS-REQU [${options.uuid}]: ${options?.method || 'GET'} -> ${this.host}:${this.port}${uri}`);
+        this.events.emit('log-debug', `HTTPS-REQU [${options.uuid}]: ${options?.method || 'GET'} -> ${this.host}:${this.port}${uri}`);
 
         return await axios(options)
             .then(resp => {
 
                 // log response
-                this.logger.debug(`HTTPS-RESP [${options.uuid}]: ${resp.status} - ${resp.statusText}`);
+                this.events.emit('log-debug', `HTTPS-RESP [${options.uuid}]: ${resp.status} - ${resp.statusText}`);
 
                 return resp;
             })
             .catch(err => {
 
+                // todo: rework this to build a singe err-response object to be passed back as an event
+
                 // https://github.com/axios/axios#handling-errors
                 if (err.response) {
                     // The request was made and the server responded with a status code
                     // that falls out of the range of 2xx
-                    this.logger.debug(`HTTPS-RESP [${options.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
+                    this.events.emit('log-debug', `HTTPS-RESP [${options.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
                     // return Promise.reject(err.response)
 
                 } else if (err.request) {
@@ -236,24 +240,24 @@ export class MgmtClient {
                     // The request was made but no response was received
                     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
                     // http.ClientRequest in node.js
-                    this.logger.debug(`HTTPS-REQUEST-FAILED [${options.uuid}]: ${JSON.stringify(err.request)}`)
+                    this.events.emit('log-debug', `HTTPS-REQUEST-FAILED [${options.uuid}]: ${JSON.stringify(err.request)}`)
                     // return Promise.reject(err.request)
 
                 } else {
 
                     // got a lower level failure
-                    this.logger.debug(`HTTPS request failed [${options.uuid}]: ${JSON.stringify(err)}`)
-                    
+                    this.events.emit('log-debug', `HTTPS request failed [${options.uuid}]: ${JSON.stringify(err)}`)
+
                 }
                 return Promise.reject(err)
-                
+
                 // thought:  just log the individual situations and have a single reject clause like below
                 // return Promise.reject({
                 //     message: 'HTTPS request failed',
                 //     uuid,
                 //     err
                 // })
-                
+
             })
     }
 
@@ -268,14 +272,17 @@ export class MgmtClient {
      */
     private async tokenTimer(): Promise<void> {
 
-        this.logger.debug(`Starting token timer: ${this._tokenTimeout}`);
+        this.events.emit('log-debug', `Starting token timer: ${this._tokenTimeout}`);
 
         this._tokenIntervalId = setInterval(() => {
             this._tokenTimeout--;
+
+            // todo: add event to imit timer countdown
+
             if (this._tokenTimeout <= 0) {
                 clearInterval(this._tokenIntervalId);
                 this._token = undefined; // clearing token details should get a new token
-                this.logger.debug('authToken expired:', this._tokenTimeout);
+                this.events.emit('log-debug', 'authToken expired:', this._tokenTimeout);
             }
             // run timer a little fast to pre-empt update
         }, 999);
@@ -294,11 +301,12 @@ export class MgmtClient {
         }
 
 
-
         let i = 0;  // loop counter
         let resp: HttpResponse;
         // use taskId to control loop
         while (i < this._asyncRetry.max) {
+
+            // set makeRequest to never throw an error, but keep going till a valid response
 
             resp = await this.makeRequest(url);
 
@@ -349,11 +357,9 @@ export class MgmtClient {
             await this.getToken();
         }
 
-        // const uuid = getRandomUUID(4, { simple: true });
-
         // swap out download url as needed (ternary method)
-        const url
-            = downloadType === 'UCS' ? `${F5DownloadPaths.ucs.uri}/${fileName}`
+        const url =
+            downloadType === 'UCS' ? `${F5DownloadPaths.ucs.uri}/${fileName}`
                 : downloadType === 'QKVIEW' ? `${F5DownloadPaths.qkview.uri}/${fileName}`
                     : `${F5DownloadPaths.iso.uri}/${fileName}`;
 
@@ -387,36 +393,45 @@ export class MgmtClient {
 
 
 
-
     /**
-     * upload file to f5
-     *  - POST	/mgmt/shared/file-transfer/uploads/{file}
-     *  - path on f5: /var/config/rest/downloads
+     * upload file to f5 -> used for ucs/ilx-rpms/.conf-merges
+     * 
+     * types of F5 uploads
+     * - FILE
+     *  - uri: '/mgmt/shared/file-transfer/uploads'
+     *  - path: '/var/config/rest/downloads'
+     * - ISO
+     *  - uri: '/mgmt/cm/autodeploy/software-image-uploads'
+     *  - path: '/shared/images'
      * 
      * https://devcentral.f5.com/s/articles/demystifying-icontrol-rest-part-5-transferring-files
      * 
-     * @param fileName file name on bigip
-     * @param localDestPathFile where to put the file (including file name)
+     * @param localSourcePathFilename 
+     * @param uploadType
      */
-    async upload(localSourcePathFilename: string): Promise<HttpResponse> {
+    async upload(localSourcePathFilename: string, uploadType: F5Upload): Promise<HttpResponse> {
 
         // if auth token has expired, it should have been cleared, get new one
         if (!this._token) {
             await this.getToken();
         }
 
-        // const uuid = getRandomUUID(4, { simple: true });
-
-        let response: HttpResponse;
+        // array to hold responses
+        const responses = [];
         const fileName = path.parse(localSourcePathFilename).base;
         const fileStats = fs.statSync(localSourcePathFilename);
         const chunkSize = 1024 * 1024;
         let start = 0;
         let end = Math.min(chunkSize, fileStats.size - 1);
 
+        const url =
+            uploadType === 'FILE'
+                ? `${F5UploadPaths.file.uri}/${fileName}`
+                : `${F5UploadPaths.iso.uri}/${fileName}`;
+
         while (end <= fileStats.size - 1 && start < end) {
 
-            response = await this.makeRequest(`/mgmt/shared/file-transfer/uploads/${fileName}`, {
+            const resp = await this.makeRequest(url, {
                 method: 'POST',
                 headers: {
                     'X-F5-Auth-Token': this._token.token,
@@ -436,19 +451,24 @@ export class MgmtClient {
             } else { // done - could use do..while loop instead of this
                 end = fileStats.size;
             }
+            responses.push(resp);
         }
 
-        response.data.fileName = fileName;
-        response.data.bytes = fileStats.size;
+        // get the last response
+        const lastResponse = responses.pop();
 
-        return response
+        // inject file stream information
+        lastResponse.data.fileName = fileName;
+        lastResponse.data.bytes = fileStats.size;
+
+        return lastResponse;
     }
 
 
 
     /**
-     * this funciton is used to build a filename for with all necessary details
-     *   for files like ucs/qkviews/
+     * this funciton is used to build a filename for with all necessary host specific details
+     *   for files like ucs/qkviews
      * @returns string with `${this.hostname}_${this.host}_${cleanISOdateTime}`
      * @example bigip1_10.200.244.101_20201127T220451142Z
      */

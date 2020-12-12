@@ -14,11 +14,11 @@ import * as fs from 'fs';
 import path from 'path';
 
 
-import { F5Client } from '../src/bigip/f5Client';
-import { getF5Client, ipv6Host } from './fixtureUtils';
-import { getFakeToken } from './fixtureUtils';
-import { AuthTokenReqBody } from '../src/bigip/bigipModels';
-import { F5DownloadPaths } from '../src/constants';
+import { F5Client } from '../../src/bigip/f5Client';
+import { getF5Client, ipv6Host } from '../fixtureUtils';
+import { getFakeToken } from '../fixtureUtils';
+import { AuthTokenReqBody } from '../../src/bigip/bigipModels';
+import { F5DownloadPaths } from '../../src/constants';
 
 
 let f5Client: F5Client;
@@ -142,7 +142,7 @@ describe('F5Device file upload/download integration tests - ipv6', function () {
             .post(`/mgmt/shared/file-transfer/uploads/${rpm}`)
             .reply(200, { foo: 'bar' });
 
-        const resp = await f5Client.upload(filePath);
+        const resp = await f5Client.upload(filePath, 'FILE');
         assert.deepStrictEqual(resp.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
         assert.ok(resp.data.bytes);  // just asserting that we got a value here, should be a number
         await f5Client.clearLogin();

@@ -37,6 +37,16 @@ export type AuthTokenReqBody = {
  */
 export type F5DownLoad = 'UCS' | 'QKVIEW' | 'ISO'
 
+
+/**
+ * types of F5 uploads
+ * - FILE
+ *  - uri: '/mgmt/shared/file-transfer/uploads'
+ *  - path: '/var/config/rest/downloads'
+ * - ISO
+ *  - uri: '/mgmt/cm/autodeploy/software-image-uploads'
+ *  - path: '/shared/images'
+ */
 export type F5Upload = 'ISO' | 'FILE'
 
 

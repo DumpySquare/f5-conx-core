@@ -11,7 +11,7 @@
 
 import assert from 'assert';
 import nock from 'nock';
-import * as fs from 'fs';
+import fs from 'fs';
 import path from 'path';
 
 
@@ -39,7 +39,9 @@ const tmpDir = path.join(__dirname, 'tmp')
 // destination test path with file name
 const tmp = path.join(tmpDir, tmpUcs)
 
-describe('F5Device UCS integration tests - ipv6', function () {
+const events = []
+
+describe('f5Client UCS integration tests - ipv6', function () {
 
     // runs once before the first test in this block
     before(async function () {
@@ -49,15 +51,21 @@ describe('F5Device UCS integration tests - ipv6', function () {
         }
 
         nockScope = nock(`https://${ipv6Host}`)
-            .post(iControlEndpoints.login)
-            .reply(200, (uri, reqBody: AuthTokenReqBody) => {
-                return getFakeToken(reqBody.username, reqBody.loginProviderName);
-            })
-            //discover endpoint
-            .get(iControlEndpoints.tmosInfo)
-            .reply(200, deviceInfo)
+        .post(iControlEndpoints.login)
+        .reply(200, (uri, reqBody: AuthTokenReqBody) => {
+            return getFakeToken(reqBody.username, reqBody.loginProviderName);
+        })
+        //discover endpoint
+        .get(iControlEndpoints.tmosInfo)
+        .reply(200, deviceInfo)
 
         f5Client = getF5Client({ ipv6: true });
+
+        f5Client.events.on('failedAuth', msg => events.push(msg));
+        f5Client.events.on('log-debug', msg => events.push(msg));
+        f5Client.events.on('log-info', msg => events.push(msg));
+        f5Client.events.on('log-error', msg => events.push(msg));
+
         await f5Client.discover();
     });
 
@@ -73,23 +81,24 @@ describe('F5Device UCS integration tests - ipv6', function () {
                 console.log('was unable to delete tmp folder for upload/download tests, this typically means there are files in it that one of the tests did not clean up', e)
             }
         }
+
+        // clear login at the end of tests
         f5Client.clearLogin();
+        
     });
 
     beforeEach(async function () {
-        // refresh the device client class
+        // setting the array length to 0 emptys it, so we can use it as a "const"
+        events.length = 0;
 
     });
 
     afterEach(async function () {
         // Alert if all our nocks didn't get used, and clear them out
-        // if (!nock.isDone()) {
-        //     throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`)
-        // }
-        // nock.cleanAll();
-
-        // clear token timer if something failed
-        // clear auth token for next test
+        if (!nock.isDone()) {
+            throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`)
+        }
+        nock.cleanAll();
     });
 
     it('create mini ucs on f5', async function () {
@@ -135,10 +144,6 @@ describe('F5Device UCS integration tests - ipv6', function () {
         // assert that the response included an expected file name format
         assert.ok(/\w+.mini_ucs.tar.gz/.test(resp.data.file), 'did not recieve expected file name');
         assert.ok(resp.data.commandResult)
-
-        // assert.deepStrictEqual(resp.data.file, ucsFileName)
-        // nock.recorder.play();
-
     });
 
 
@@ -198,17 +203,17 @@ describe('F5Device UCS integration tests - ipv6', function () {
 
     });
 
-    // it('create ucs with passphrase and no-private-keys on f5', async function () {
-    //     // todo:  create test for creating ucs with passPhrase and noPrivateKeys
-    // });
+    it('create ucs with passphrase and no-private-keys on f5', async function () {
+        // todo:  create test for creating ucs with passPhrase and noPrivateKeys
+    });
 
-    // it('create ucs with just passphrase on f5', async function () {
-    //     // todo:  create test for creating ucs with passPhrase and noPrivateKeys
-    // });
+    it('create ucs with just passphrase on f5', async function () {
+        // todo:  create test for this
+    });
 
-    // it('create ucs with just no-private-keys on f5', async function () {
-    //     // todo:  create test for creating ucs with passPhrase and noPrivateKeys
-    // });
+    it('create ucs with just no-private-keys on f5', async function () {
+        // todo:  create test for this
+    });
 
 
     it('list ucs on f5', async function () {
@@ -294,7 +299,7 @@ describe('F5Device UCS integration tests - ipv6', function () {
 
         let resp: HttpResponse;
         try {
-            resp = await f5Client.ucs.get({ fileName: tmpUcs, localDestPathFile: tmp });
+            resp = await f5Client.ucs.get({ fileName: tmpUcs, localDestPathFile: tmpDir });
         } catch (e) {
             debugger;
 

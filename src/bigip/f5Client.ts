@@ -11,7 +11,7 @@
 
 import { EventEmitter } from 'events';
 
-import { AtcMetaData, AtcInfo, F5InfoApi, F5DownLoad } from "./bigipModels";
+import { AtcMetaData, AtcInfo, F5InfoApi, F5DownLoad, F5Upload } from "./bigipModels";
 import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
 // import { MetadataClient } from "./metadata";
 import Logger from '../logger'
@@ -67,23 +67,30 @@ export class F5Client {
         options?: {
             port?: number,
             provider?: string,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            logger?: any,
-            // eventEmitter?: EventEmitter
         }
     ) {
-        // create event emitter and pass to mgmtClient
-        this.events = new EventEmitter();
         this._mgmtClient = new MgmtClient(
             host,
             user,
             password,
-            this.events,
             options
         )
-        // assign incoming logger reference, else assign local
-        this.logger = options?.logger ? options.logger : Logger.getLogger();
+
+        // get event emitter instance from mgmtClient
+        this.events = this._mgmtClient.getEvenEmitter();
     }
+
+
+    
+    /**
+     * clear auth token
+     *  - mainly for unit tests...
+     */
+    async clearLogin(): Promise<void> {
+        return this._mgmtClient.clearToken();
+    }
+
+
 
     /**
      * Make HTTP request
@@ -95,15 +102,6 @@ export class F5Client {
      */
     async https(uri: string, options?: F5HttpRequest): Promise<HttpResponse> {
         return await this._mgmtClient.makeRequest(uri, options)
-    }
-
-
-    /**
-     * clear auth token
-     *  - mainly for unit tests...
-     */
-    async clearLogin(): Promise<void> {
-        return this._mgmtClient.clearToken();
     }
 
 
@@ -196,14 +194,21 @@ export class F5Client {
 
 
     /**
-     * upload file to f5
-     *  - used for ucs/ilx-rpms/.conf-merges
+     * upload file to f5 -> used for ucs/ilx-rpms/.conf-merges
+     * 
+     * types of F5 uploads
+     * - FILE
+     *  - uri: '/mgmt/shared/file-transfer/uploads'
+     *  - path: '/var/config/rest/downloads'
+     * - ISO
+     *  - uri: '/mgmt/cm/autodeploy/software-image-uploads'
+     *  - path: '/shared/images'
+     * 
      * @param localSourcePathFilename 
+     * @param uploadType
      */
-    async upload(localSourcePathFilename: string): Promise<HttpResponse> {
-
-        return this._mgmtClient.upload(localSourcePathFilename)
-
+    async upload(localSourcePathFilename: string, uploadType: F5Upload): Promise<HttpResponse> {
+        return this._mgmtClient.upload(localSourcePathFilename, uploadType)
     }
 
 
@@ -247,6 +252,7 @@ export class F5Client {
 
     /**
      * refresh/get latest ATC metadata from 
+     * *** not implemented yet ***
      * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
      * todo: refresh this file with every packages release via git actions or package.json script
      */

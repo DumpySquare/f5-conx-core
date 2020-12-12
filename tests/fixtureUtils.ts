@@ -11,6 +11,7 @@ import { Token } from '../src/bigip/bigipModels';
 import { getRandomUUID } from '../src/utils/misc'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { localDev } from './localTestDevice'
+import { MgmtClient } from '../src/bigip/mgmtClient';
 
 
 
@@ -20,6 +21,16 @@ export const defaultUser = 'admin';
 export const defaultPassword = '@utomateTheW0rld!';
 
 export const ipv6Host = '[2607:f0d0:1002:51::5]'
+
+
+export function getMgmtClient(): MgmtClient {
+
+    return new MgmtClient(
+        defaultHost,
+        defaultUser,
+        defaultPassword,
+    )
+}
 
 
 /**
@@ -61,7 +72,7 @@ export function getF5Client(
     return new F5Client(
         opts?.ipv6 ? ipv6Host : defaultHost,
         defaultUser,
-        defaultPassword, 
+        defaultPassword,
         newOpts ? newOpts : undefined
     );
 }
