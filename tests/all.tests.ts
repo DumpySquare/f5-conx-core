@@ -8,6 +8,12 @@
  */
 
 
+ // set env vars for the tests
+process.env.F5_CONX_CORE_TCP_TIMEOUT = "3000"
+process.env.F5_CONX_CORE_LOG_LEVEL = "debug"
+process.env.F5_CONX_CORE_LOG_BUFFER = "true"
+process.env.F5_CONX_CORE_LOG_CONSOLE = "false"
+
 // unit test example logger class
 require('./logger.unit.tests')
 
@@ -17,6 +23,8 @@ require('./logger.unit.tests')
 // unit test iHealth client class (uses extHttp.ts)
 // require('./iHealth.unit.tests)
 
+// unit test core mgmtClient failures
+require('./mgmtClient.failures.unit.test')
 
 
 // unit test core mgmtClient
@@ -33,9 +41,6 @@ require('./f5Client_ipv6.int.tests')
 
 
 // ucs sub-class tests 
-require('./f5Device_ucs.int.tests')
+require('./f5Client_ucs.int.tests')
 
 
-
-// unit test core mgmtClient failures
-require('./mgmtClient.failures.unit.test')

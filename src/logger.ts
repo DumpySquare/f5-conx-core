@@ -51,12 +51,12 @@ export default class Logger {
      * 
      * @default false
      */
-    buffer: boolean = false;
+    buffer = false;
     /**
      * output log messages to console
      * @default true
      */
-    console: boolean = true;
+    console = true;
     private static instance: Logger;
 
     /**
@@ -66,10 +66,12 @@ export default class Logger {
      * @param options.console enable/disable output to console.log
      * @returns logger instance
      */
-    static getLogger(options?: { 
+    static getLogger(
+        // options?: { 
         // buffer?: string, 
         // console?: string 
-    }): Logger {
+    // }
+    ): Logger {
         if (!Logger.instance) {
             Logger.instance = new Logger();
         }
@@ -161,12 +163,11 @@ export default class Logger {
         const logLevels = Object.keys(LOG_LEVELS);
         const logLevelFromEnvVar = process.env[constants.ENV_VARS.LOG_LEVEL];
 
-        const a = (process.env?.F5_CONX_CORE_LOG_BUFFER == 'true');
-        const b = (process.env?.F5_CONX_CORE_LOG_CONSOLE == 'true');
-
+        
         if(process.env.F5_CONX_CORE_LOG_BUFFER){
             this.buffer = (process.env?.F5_CONX_CORE_LOG_BUFFER == 'true');
         }
+
         if (process.env.F5_CONX_CORE_LOG_CONSOLE) {
             this.console = (process.env.F5_CONX_CORE_LOG_CONSOLE == 'true');
         }

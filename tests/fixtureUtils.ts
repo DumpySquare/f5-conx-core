@@ -22,8 +22,21 @@ export const defaultPassword = '@utomateTheW0rld!';
 
 export const ipv6Host = '[2607:f0d0:1002:51::5]'
 
+// function setEnvs(): void {
+
+//     // set env vars
+
+//     process.env.F5_CONX_CORE_TCP_TIMEOUT = "3000"
+
+//     process.env.F5_CONX_CORE_LOG_LEVEL = "debug"
+//     process.env.F5_CONX_CORE_LOG_BUFFER = "true"
+//     process.env.F5_CONX_CORE_LOG_CONSOLE = "false"
+// }
+
 
 export function getMgmtClient(): MgmtClient {
+
+    // setEnvs();
 
     return new MgmtClient(
         defaultHost,
@@ -43,10 +56,7 @@ export function getF5Client(
         provider?: string
     }): F5Client {
 
-    // set env vars
-    process.env.F5_CONX_CORE_LOG_LEVEL = "debug"
-    process.env.F5_CONX_CORE_LOG_BUFFER = "true"
-    process.env.F5_CONX_CORE_LOG_CONSOLE = "false"
+    // setEnvs();
 
     const newOpts: {
         port?: number,

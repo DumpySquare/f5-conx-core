@@ -182,6 +182,32 @@ describe('mgmtClient unit tests - successes', function () {
     });
 
 
+    it('confirm http response object/structure/details', async function () {
+        nockInst
+            .get(`/test/1`)
+            .reply(200, { something: 'awesome' } )
+
+        const resp = await mgmtClient.makeRequest('/test/1')
+        .then( resp => resp )
+        .catch( err => {
+            debugger;
+            return Promise.reject(err)
+        })
+
+        assert.deepStrictEqual(resp.data, { something: 'awesome' })
+        assert.ok(resp.headers)
+        assert.deepStrictEqual(resp.status, 200)
+        // assert.ok(resp.statusText)
+        assert.ok(resp.request.baseURL)
+        assert.ok(resp.request.method)
+        assert.ok(resp.request.headers)
+        assert.ok(resp.request.protocol)
+        assert.ok(resp.request.timings)
+        assert.ok(resp.request.uuid)
+        assert.ok(resp.request.url)
+    });    
+
+
     it('follow async post/response', async function () {
         nockInst
             .get(`/test/1`)

@@ -24,42 +24,41 @@ export type F5HttpRequest = {
     advancedReturn?: boolean,
     contentType?: string,
     responseType?: ResponseType,
-    uuid?: string
+    config?: {
+        uuid?: string
+    }
 }
 
-// export interface AxiosResponseWithTimings extends AxiosResponse {
-//     timings?: Timings;
-// }
-
-
-export interface HttpResponse extends AxiosResponse {
-    timings?: Timings;
+export interface AxiosResponseWithTimings extends AxiosResponse {
     config: uuidAxiosRequestConfig
 }
+
+
+// export interface HttpResponse extends AxiosResponse {
+//     timings?: Timings;
+//     config: uuidAxiosRequestConfig
+// }
 
 export interface uuidAxiosRequestConfig extends AxiosRequestConfig {
     uuid?: string
 }
 
-// /**
-//  * custom http response with timings, based on axios response
-//  */
-// export type HttpResponse<T = any> = {
-//     data?: T;
-//     status: number;
-//     statusText?: string;
-//     headers?: unknown;
-//     config?: {
-//         url: string;
-//         httpsAgent: {
-//             protocol: string
-//         }
-//     }
-//     request: {
-//         url: string;
-//         method: string;
-//         headers: unknown;
-//         protocol: string;
-//         timings: Timings;
-//     };
-// };
+/**
+ * custom http response with timings, based on axios response
+ */
+export type HttpResponse<T = any> = {
+    data?: T;
+    status: number,
+    statusText: string,
+    headers: unknown,
+    // config?: F5HttpRequest,
+    request: {
+        baseURL: string,
+        url: string,
+        uuid?: string,
+        method: string,
+        headers: unknown,
+        protocol: string,
+        timings: Timings,
+    };
+};

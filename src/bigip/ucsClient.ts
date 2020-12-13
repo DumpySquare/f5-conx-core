@@ -106,6 +106,12 @@ export class UcsClient {
             options?.fileName ? 
             options.fileName : await this._mgmtClient.getFileName();
 
+        this._mgmtClient.events.emit('log-debug', {
+            message: 'ucs create function',
+            options,
+            file,
+        })
+
         if(options?.mini) {
 
             const fileN = `${file}.mini_ucs.tar.gz`
@@ -135,8 +141,8 @@ export class UcsClient {
             //  * Example:  "commandResult":"tar: config/bigip_gtm.conf: Cannot stat: No such file or directory\ntar: config/bigip_script.conf: Cannot stat: No such file or directory\ntar: config/bigip.license: Cannot stat: No such file or directory\ntar: Exiting with failure status due to previous errors\n"
             //  */
 
-            // this._mgmtClient.logger.debug('creating mini_ucs, options:', file, options, )
-
+            this._mgmtClient.events.emit('log-debug', 'creating mini_ucs')
+            
             // run the main bash command to make the mini_ucs
             return await this._mgmtClient.makeRequest(iControlEndpoints.bash, {
                 method: 'POST',
@@ -146,9 +152,10 @@ export class UcsClient {
                 }
             })
             .then( async resp => {
-
+                
                 // todo: create a log statement saying, "The previous bash call could have tossed some errors about files missing, however, the tar/ucs should have still been created with the files that were present"
-
+                this._mgmtClient.events.emit('log-debug', 'confirming mini_ucs has been created')
+                
                 // run another bash command to ls ucs directory
                 //  this is just double checking everything worked as expected
                 return await this._mgmtClient.makeRequest(iControlEndpoints.bash, {
@@ -159,20 +166,28 @@ export class UcsClient {
                     }   
                 })
                 .then ( check => {
-
+                    
                     if(check.data.commandResult.includes(fileN)) {
-
+                        
                         // if file creation api worked and ls of /var/local/ucs api worked
                         //  and we made sure the file we expect is in the directory...
-
+                        
                         // inject file name into response so downstream functions can use it
                         resp.data.file = fileN;
-
+                        
                         // inject confirmation data - this is just for fyi
                         resp.data.ls = check.data.commandResult
+
+                        this._mgmtClient.events.emit('log-debug', {
+                            message: 'mini_ucs creationg confirmed',
+                            data: resp.data
+                        })
+
                         return resp;
                     } else {
-                        Promise.reject('mini_ucs api calls were successful, but the mini_ucs was not created.  Please check the logs for possible failure reasons')
+                        const msg = 'mini_ucs api calls were successful, but the mini_ucs was not created.  Please check the logs for possible failure reasons'
+                        this._mgmtClient.events.emit('log-error', msg)
+                        Promise.reject(msg)
                     }
                 })
             })
@@ -214,6 +229,11 @@ export class UcsClient {
 
             }
 
+            this._mgmtClient.events.emit('log-debug', {
+                message: 'creating ucs',
+                postBody
+            })
+
             // create ucs
             return await this._mgmtClient.makeRequest(iControlEndpoints.sharedUcsBackup, {
                 method: 'POST',
@@ -246,9 +266,11 @@ export class UcsClient {
         // if we only got a local path (no filename with file type suffix ".ext")
         //  then append created file name
         if(!localDestPathFile.includes('.')) {
+            this._mgmtClient.events.emit('log-debug', 'ucs download, specified destination is path, appending file name');
             localDestPathFile = path.join(localDestPathFile, fileName);
         }
-
+        
+        // this._mgmtClient.events.emit('log-debug', 'ucs download, specified destination is path, appending file name');
         return await this._mgmtClient.download(fileName, localDestPathFile, 'UCS');
     }
 

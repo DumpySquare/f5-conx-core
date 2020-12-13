@@ -12,9 +12,10 @@
 import assert from 'assert';
 import nock from 'nock';
 
-import { defaultHost, getMgmtClient } from './fixtureUtils';
+import { defaultHost, getFakeToken, getMgmtClient } from './fixtureUtils';
 import { failedAuthResp } from './artifacts/authToken';
 import { MgmtClient } from '../src/bigip/mgmtClient';
+import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 
 
 describe('mgmtClient tests - failures', async function () {
@@ -30,6 +31,18 @@ describe('mgmtClient tests - failures', async function () {
 
 
     it('fail tcp connection', async function () {
+        // here we use the same mocking as evertyhing else, but
+        // delay the connection more than tcp timeout, nock will 
+        // pre-empt the timeout.  timeout set with env vars
+        // https://github.com/nock/nock#delay-the-connection
+        nock(`https://192.0.0.1:8443`)
+        .post('/mgmt/shared/authn/login')
+        .delayConnection(10000)
+        .reply(200, (uri, reqBody: AuthTokenReqBody) => {
+            return getFakeToken(reqBody.username, reqBody.loginProviderName);
+        })
+        // .get('/foo')
+        // .reply(200, { foo: 'bar' });
 
         const eventsLocal = [];
         const mgmtClientLocal = new MgmtClient(
@@ -55,7 +68,10 @@ describe('mgmtClient tests - failures', async function () {
                 // debugger;
             })
 
-        assert.ok(eventsLocal.includes('token request failed: connect ETIMEDOUT 192.0.0.1:8443'))
+            // examples:
+            // 'token request failed: connect ETIMEDOUT 192.0.0.1:8443'
+            // 'token request failed: timeout of 3000ms exceeded'
+        assert.ok(JSON.stringify(eventsLocal).includes('token request failed'))
     });
 
     it('fail host dns resolve', async function () {
