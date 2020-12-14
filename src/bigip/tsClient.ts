@@ -26,17 +26,17 @@ export class TsClient {
         this.mgmtClient = mgmtClient;
     }
 
-    async get (): Promise<string> {
-        return 'ts-get';
-    }
+    // async get (): Promise<string> {
+    //     return 'ts-get';
+    // }
 
-    async post (): Promise<string> {
-        return 'ts-post';
-    }
+    // async post (): Promise<string> {
+    //     return 'ts-post';
+    // }
 
-    async inpsect (): Promise<string> {
-        return 'ts-inpsect';
-    }
+    // async inpsect (): Promise<string> {
+    //     return 'ts-inpsect';
+    // }
 
     // async remove () {
 

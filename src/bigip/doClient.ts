@@ -29,20 +29,19 @@ export class DoClient {
     }
 
 
-    async get(): Promise<string> {
-        return 'do-get';
-    }
+    // async get(): Promise<string> {
+    //     return 'do-get';
+    // }
 
-    async post(): Promise<string> {
-        return 'do-post';
-    }
+    // async post(): Promise<string> {
+    //     return 'do-post';
+    // }
 
-    async inpsect(): Promise<string> {
-        return 'do-inpsect';
-    }
+    // async inpsect(): Promise<string> {
+    //     return 'do-inpsect';
+    // }
 
     // async remove () {
-
     //     // if bigiq, target/tenant are needed
     // }
 }

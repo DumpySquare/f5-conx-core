@@ -44,20 +44,22 @@ export enum LogLevel {
  * ```
  */
 export default class Logger {
-    journal = [];
+    readonly journal = [];
 
     /**
      * buffer log messages
-     * 
-     * @default false
+     * @default true
      */
-    buffer = false;
+    buffer = true;
+
     /**
      * output log messages to console
      * @default true
      */
     console = true;
+
     private static instance: Logger;
+
 
     /**
      * Get logger instance (singleton)
@@ -66,44 +68,58 @@ export default class Logger {
      * @param options.console enable/disable output to console.log
      * @returns logger instance
      */
-    static getLogger(
-        // options?: { 
-        // buffer?: string, 
-        // console?: string 
-    // }
-    ): Logger {
+    static getLogger(): Logger {
         if (!Logger.instance) {
             Logger.instance = new Logger();
         }
-
-        // assign switches
-        // Logger.instance.buffer = options?.buffer;
-        // Logger.instance.console = options?.console;
-
         return Logger.instance;
     }
+
+    // /**
+    //  * get logs from buffer/journal
+    //  */
+    // getLogs(): string[] {
+    //     return this.journal;
+    // }
+
+    /**
+     * clear/delete buffer/journal
+     */
+    clearLogs(): number {
+        return this.journal.length = 0;
+    }
+
+    /**
+     * overwritable function to allow additional output integrations
+     * @param x log message
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    output = function(x: string): void {
+        // by default, do nothing...
+        // to be overwritten by user/app
+        // I guess we could have just emitted an event...
+        // but, this function method could be modified to allow formatting changes
+    };
+    
 
     /**
      * Log debug message
      */
     debug(...msg: [unknown, ...unknown[]]): void {
-        if (LOG_LEVELS.debug <= LOG_LEVELS[this._checkLogLevel()]) {
+        const x = LOG_LEVELS.debug
+        const y = LOG_LEVELS[this._checkLogLevel()]
+        if (x <= y) {
             this.log('DEBUG', ...msg);
         }
+
     }
-    // debug(msg: string): void {
-    //     if (LOG_LEVELS.debug <= LOG_LEVELS[this._checkLogLevel()]) {
-    //         this._log(msg, 'DEBUG');
-    //     }
-    // }
-    
+
     /**
      * Log informational message
      */
     info(...msg: [unknown, ...unknown[]]): void {
-        if (LOG_LEVELS.info >= LOG_LEVELS[this._checkLogLevel()]) {
+        if (LOG_LEVELS.info <= LOG_LEVELS[this._checkLogLevel()]) {
             this.log('INFO', ...msg);
-            // this.log(msg, 'INFO');
         }
     }
 
@@ -112,7 +128,6 @@ export default class Logger {
      */
     warning(...msg: [unknown, ...unknown[]]): void {
         if (LOG_LEVELS.warning <= LOG_LEVELS[this._checkLogLevel()]) {
-            // this.log(msg, 'WARNING');
             this.log('WARNING', ...msg);
         }
     }
@@ -122,18 +137,17 @@ export default class Logger {
      * Log error message
      */
     error(...msg: [unknown, ...unknown[]]): void {
-        if (LOG_LEVELS.error <= LOG_LEVELS[this._checkLogLevel()]) {
-            // this.log(msg, 'ERROR');
-            this.log('ERROR', ...msg);
-        }
+        // all error messages get logged...
+        this.log('ERROR', ...msg);
     }
+
 
 
     /** base log function
      * 
      */
     log(level: logLevels, ...messageParts: unknown[]): void {
-        
+
         // join all the log message parts
         const message = messageParts.map(this.stringify).join(' ');
         
@@ -141,7 +155,11 @@ export default class Logger {
         const dateTime = new Date().toISOString();
         
         // put everything together
-        const log = `[${dateTime}] [${level}]: ${message}`
+        const log = `[${dateTime}] [${level}]: ${message}`;
+
+        // pass log to external output function option
+        this.output(log);
+
         
         if (this.buffer) {
             // todo: put some sort of limit on the buffer size (max 500?)
@@ -154,9 +172,7 @@ export default class Logger {
 
     }
 
-    getLogs(): string[] {
-        return this.journal;
-    }
+
 
 
     private _checkLogLevel(): string {
@@ -165,7 +181,7 @@ export default class Logger {
 
         
         if(process.env.F5_CONX_CORE_LOG_BUFFER){
-            this.buffer = (process.env?.F5_CONX_CORE_LOG_BUFFER == 'true');
+            this.buffer = (process.env.F5_CONX_CORE_LOG_BUFFER == 'true');
         }
 
         if (process.env.F5_CONX_CORE_LOG_CONSOLE) {

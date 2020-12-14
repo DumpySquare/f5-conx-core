@@ -29,20 +29,20 @@ export class As3Client {
     }
 
 
-    async get(): Promise<string> {
-        return 'as3-get';
-    }
+    // async get(): Promise<string> {
+    //     return 'as3-get';
+    // }
 
-    async post(): Promise<string> {
-        return 'as3-post';
-    }
+    // async post(): Promise<string> {
+    //     return 'as3-post';
+    // }
 
-    async patch(): Promise<string> {
-        return 'as3-patch';
-    }
+    // async patch(): Promise<string> {
+    //     return 'as3-patch';
+    // }
 
-    async remove(): Promise<string> {
-        return 'as3-remove';
-        // if bigiq, target/tenant are needed
-    }
+    // async remove(): Promise<string> {
+    //     return 'as3-remove';
+    //     // if bigiq, target/tenant are needed
+    // }
 }

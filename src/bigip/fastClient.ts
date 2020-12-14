@@ -29,19 +29,19 @@ export class FastClient {
     }
 
 
-    async get(): Promise<string> {
-        return 'fast-get';
-    }
+    // async get(): Promise<string> {
+    //     return 'fast-get';
+    // }
 
-    async post(): Promise<string> {
-        return 'fast-post';
-    }
+    // async post(): Promise<string> {
+    //     return 'fast-post';
+    // }
 
-    async patch(): Promise<string> {
-        return 'fast-patch';
-    }
+    // async patch(): Promise<string> {
+    //     return 'fast-patch';
+    // }
 
-    async remove(): Promise<string> {
-        return 'fast-remove';
-    }
+    // async remove(): Promise<string> {
+    //     return 'fast-remove';
+    // }
 }

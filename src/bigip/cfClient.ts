@@ -29,19 +29,19 @@ export class CfClient {
     }
 
 
-    async get(): Promise<string> {
-        return 'cf-get';
-    }
+    // async get(): Promise<string> {
+    //     return 'cf-get';
+    // }
 
-    async post(): Promise<string> {
-        return 'cf-post';
-    }
+    // async post(): Promise<string> {
+    //     return 'cf-post';
+    // }
 
-    async patch(): Promise<string> {
-        return 'cf-patch';
-    }
+    // async patch(): Promise<string> {
+    //     return 'cf-patch';
+    // }
 
-    async remove(): Promise<string> {
-        return 'cf-remove';
-    }
+    // async remove(): Promise<string> {
+    //     return 'cf-remove';
+    // }
 }
