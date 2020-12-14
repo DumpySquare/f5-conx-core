@@ -31,13 +31,22 @@ import {
 import { getFakeToken } from './fixtureUtils';
 import localAtcMetadata from '../src/bigip/atc_metadata.json';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
+import { F5DownloadPaths, F5UploadPaths } from '../src/constants';
 
 
+// test file name
+const rpm = 'f5-appsvcs-templates-1.4.0-1.noarch.rpm';
+// source file with path
+const filePath = path.join(__dirname, 'artifacts', rpm)
+// tmp directory
 const tmpDir = path.join(__dirname, 'tmp')
+// destination test path with file name
+const tmp = path.join(tmpDir, rpm)
+
 const nockInst = nock(`https://${ipv6Host}`)
 
 let f5Client: F5Client;
-let events = [];
+const events = [];
 
 describe('f5Client basic tests - ipv6', function () {
 
@@ -46,7 +55,11 @@ describe('f5Client basic tests - ipv6', function () {
             // console.log('creating temp directory for file upload/download tests')
             fs.mkdirSync(tmpDir);
         }
-
+    });
+ 
+    beforeEach(function () {
+        events.length = 0;
+        
         // setup mgmt client
         f5Client = getF5Client({ ipv6: true });
 
@@ -56,16 +69,13 @@ describe('f5Client basic tests - ipv6', function () {
         f5Client.events.on('log-info', msg => events.push(msg));
         f5Client.events.on('log-error', msg => events.push(msg));
 
-    });
- 
-    beforeEach(function () {
-        events = [];
         nockInst
         .post('/mgmt/shared/authn/login')
         .reply(200, (uri, reqBody: AuthTokenReqBody) => {
             return getFakeToken(reqBody.username, reqBody.loginProviderName);
         })
     });
+
     afterEach(function () {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`)
@@ -172,4 +182,41 @@ describe('f5Client basic tests - ipv6', function () {
         assert.ok(f5Client.ts)
         assert.ok(f5Client.cf)
     });
+
+    /**
+     * the following tests just confirm that the f5Client is able to upload/download files through the mgmtClient
+     */
+    it('download file from F5 - UCS path', async function () {
+        this.slow(200);
+        nockInst
+            .persist()
+            .get(`${F5DownloadPaths.ucs.uri}/${rpm}`)
+            .replyWithFile(200, filePath);
+
+        const resp = await f5Client.download(rpm, tmp, 'UCS');    // download file
+
+        assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
+        fs.unlinkSync(resp.data.file);                     // remove tmp file
+    });
+
+    it('upload file to F5 - FILE', async function () {
+        this.slow(600);
+        nockInst
+            // tell the nocks to persist for this test, the following post will get called several times
+            //  for all the pieces of the file
+            .persist()
+
+            // so the following just tests that the url was POST'd to, not the file contents
+            //  but since the function returns the filename and file size as part of the upload process
+            //  those should confirm that everthing completed
+            .post(`${F5UploadPaths.file.uri}/${rpm}`)
+            .reply(200, { foo: 'bar' });
+
+        const resp = await f5Client.upload(filePath, 'FILE');
+        assert.deepStrictEqual(resp.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
+        assert.ok(resp.data.bytes);  // just asserting that we got a value here, should be a number
+    });
+
+
+
 });

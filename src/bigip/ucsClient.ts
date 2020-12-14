@@ -185,6 +185,7 @@ export class UcsClient {
 
                         return resp;
                     } else {
+                        // this is a corner case that I have not experienced, but figured was valid
                         const msg = 'mini_ucs api calls were successful, but the mini_ucs was not created.  Please check the logs for possible failure reasons'
                         this._mgmtClient.events.emit('log-error', msg)
                         Promise.reject(msg)

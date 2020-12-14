@@ -137,6 +137,8 @@ export class MgmtClient {
             return config;
         }, function (err) {
             // Do something with request error
+            // not sure how to test this, but it is probably handled up the chain
+            /* istanbul ignore next */
             return Promise.reject(err);
         });
 
@@ -294,12 +296,14 @@ export class MgmtClient {
                     // The request was made but no response was received
                     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
                     // http.ClientRequest in node.js
-                    this.events.emit('log-debug', `HTTPS-REQUEST-FAILED [${err.response.config.uuid}]: ${JSON.stringify(err.request)}`)
+                    this.events.emit('log-debug', `HTTPS-REQUEST-FAILED [path:${err.request.path}]: ${err.message}`)
                     // return Promise.reject(err.request)
 
                 } else {
 
-                    // got a lower level failure
+                    // got a lower level (config) failure
+                    // not sure how to test this...
+                    /* istanbul ignore next */
                     this.events.emit('log-debug', `HTTPS request failed [${err.response.config.uuid}]: ${JSON.stringify(err)}`)
 
                 }
@@ -331,7 +335,7 @@ export class MgmtClient {
         this._tokenIntervalId = setInterval(() => {
             this._tokenTimeout--;
 
-            // todo: add event to imit timer countdown
+            // todo: add event to emit timer countdown
 
             if (this._tokenTimeout <= 0) {
                 clearInterval(this._tokenIntervalId);
@@ -568,6 +572,7 @@ export class MgmtClient {
             }
         } else {
             this.events.emit('log-error', 'getFileName function called, but no hostInfo, discover device first')
+            return Promise.reject('getFileName function called, but no hostInfo, discover device first')
         }
     }
 }

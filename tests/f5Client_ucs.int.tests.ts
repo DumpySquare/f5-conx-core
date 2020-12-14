@@ -22,7 +22,7 @@ import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 import { F5DownloadPaths, iControlEndpoints } from '../src/constants';
 
 
-import { deviceInfo } from './artifacts/f5_device_atc_infos';
+import { deviceInfoIPv6 } from './artifacts/f5_device_atc_infos';
 import { ucsListApiReponse } from './artifacts/ucsList'
 import { HttpResponse } from '../src/utils/httpModels';
 
@@ -51,13 +51,13 @@ describe('f5Client UCS integration tests - ipv6', function () {
         }
 
         nockScope = nock(`https://${ipv6Host}`)
-        .post(iControlEndpoints.login)
-        .reply(200, (uri, reqBody: AuthTokenReqBody) => {
-            return getFakeToken(reqBody.username, reqBody.loginProviderName);
-        })
-        //discover endpoint
-        .get(iControlEndpoints.tmosInfo)
-        .reply(200, deviceInfo)
+            .post(iControlEndpoints.login)
+            .reply(200, (uri, reqBody: AuthTokenReqBody) => {
+                return getFakeToken(reqBody.username, reqBody.loginProviderName);
+            })
+            //discover endpoint
+            .get(iControlEndpoints.tmosInfo)
+            .reply(200, deviceInfoIPv6)
 
         f5Client = getF5Client({ ipv6: true });
 
@@ -84,7 +84,7 @@ describe('f5Client UCS integration tests - ipv6', function () {
 
         // clear login at the end of tests
         f5Client.clearLogin();
-        
+
     });
 
     beforeEach(async function () {
@@ -204,15 +204,92 @@ describe('f5Client UCS integration tests - ipv6', function () {
     });
 
     it('create ucs with passphrase and no-private-keys on f5', async function () {
-        // todo:  create test for creating ucs with passPhrase and noPrivateKeys
+
+        // this.slow(6000);
+        let reqBody: { file: string, action: string, passphrase: string };
+
+        nockScope
+            .post(iControlEndpoints.backup)
+            .reply((uri, requestBody: { file: string, action: string, passphrase: string }) => {
+                reqBody = requestBody;
+                return [
+                    202
+                ]
+            })
+
+        try {
+            await f5Client.ucs.create({ passPhrase: 'catNip', noPrivateKeys: true });
+        } catch (e) {
+            // do nothing..
+            // we expect this to fail, but we just need the post body to confirm it generated the right filename
+            // debugger;
+        }
+
+        // messaged host for file format
+        const host = ipv6Host.replace(/(\[|\])/g, '').replace(/\:/g, '.')
+        // confirm it has the right ipv6 fileName format
+        assert.ok(reqBody.file.includes(host));
+
+        // confirm body action
+        assert.deepStrictEqual(reqBody.action, 'BACKUP_WITH_NO_PRIVATE_KEYS_WITH_ENCRYPTION')
+        // confirm body passphrase
+        assert.deepStrictEqual(reqBody.passphrase, 'catNip')
+
+        // nock.cleanAll();
+
     });
 
     it('create ucs with just passphrase on f5', async function () {
-        // todo:  create test for this
+
+        let reqBody: { file: string, action: string, passphrase: string };
+
+        nockScope
+            .post(iControlEndpoints.backup)
+            .reply((uri, requestBody: { file: string, action: string, passphrase: string }) => {
+                reqBody = requestBody;
+                return [
+                    202
+                ]
+            })
+
+        try {
+            await f5Client.ucs.create({ passPhrase: 'catNip' });
+        } catch (e) {
+            // do nothing..
+            // we expect this to fail, but we just need the post body to confirm it generated the right filename
+            // debugger;
+        }
+
+        // confirm body action
+        assert.deepStrictEqual(reqBody.action, 'BACKUP_WITH_ENCRYPTION')
+        // confirm body passphrase
+        assert.deepStrictEqual(reqBody.passphrase, 'catNip')
     });
 
+
     it('create ucs with just no-private-keys on f5', async function () {
-        // todo:  create test for this
+        let reqBody: { file: string, action: string, passphrase: string };
+
+        nockScope
+            .post(iControlEndpoints.backup)
+            .reply((uri, requestBody: { file: string, action: string, passphrase: string }) => {
+                reqBody = requestBody;
+                return [
+                    202
+                ]
+            })
+
+        try {
+            await f5Client.ucs.create({ noPrivateKeys: true });
+        } catch (e) {
+            // do nothing..
+            // we expect this to fail, but we just need the post body to confirm it generated the right filename
+            // debugger;
+        }
+
+        // confirm body action
+        assert.deepStrictEqual(reqBody.action, 'BACKUP_WITH_NO_PRIVATE_KEYS')
+
     });
 
 

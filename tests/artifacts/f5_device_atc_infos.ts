@@ -60,6 +60,65 @@ export const deviceInfo = {
 
 
 
+/**
+ * f5 host info api @ '/mgmt/shared/identified-devices/config/device-info'
+ */
+export const deviceInfoIPv6 = {
+    "baseMac": "00:50:00:ff:F4:CB",
+    "hostMac": "00:50:00:ff:F4:CB",
+    "halUuid": "42167068-xxxx-xxxx-42a5-1e7aac1ada72",
+    "chassisSerialNumber": "42167068-xxxx-xxxx-1e7aac1ada72",
+    "slots": [
+        {
+            "volume": "HD1.1",
+            "product": "BIG-IP",
+            "version": "15.1.0.4",
+            "build": "0.0.6",
+            "isActive": true
+        }
+    ],
+    "license": {
+        "licenseEndDateTime": "2020-11-02T00:00:00-06:00",
+        "registrationKey": "FCJVQ-XXXXX-XXXXX-ZUOJJ-NWGPCKG",
+        "activeModules": [
+            "APM, Base, VE GBB (500 CCU, 2500 Access Sessions)|MEYUYAE-XXXXXXX|Anti-Virus Checks|Base Endpoint Security Checks|Firewall Checks|Network Access|Secure Virtual Keyboard|APM, Web Application|Machine Certificate Checks|Protected Workspace|Remote Desktop|App Tunnel",
+            "Best Bundle, VE-5G|COTNXDC-XXXXXXX|Rate Shaping|DNSSEC|GTM Licensed Objects, Unlimited|DNS Licensed Objects, Unlimited|DNS Rate Fallback, 250K|GTM Rate Fallback, 250K|GTM Rate, 250K|DNS Rate Limit, 250K QPS|Routing Bundle, VE|ASM, VE|DNS-GTM, Base, 5Gbps|SSL, VE|Max Compression, VE|AFM, VE|Exclusive Version, v12.1.X - 18.X|VE, Carrier Grade NAT (AFM ONLY)|PSM, VE"
+        ],
+        "generation": 0,
+        "lastUpdateMicros": 1605097948915575
+    },
+    "interfaces": [
+        "1.0",
+        "mgmt"
+    ],
+    "isIControlRestSupported": true,
+    "icrdPort": 8100,
+    "time": 1605633570403,
+    "physicalMemory": 16384,
+    "platform": "Z100",
+    "cpu": "Intel(R) Xeon(R) CPU E5-2665 0 @ 2.40GHz",
+    "machineId": "d4f9b652-73cf-xxxx-xxxx-c5754383db6b",
+    "address": "[2607:f0d0:1002:51::5]",
+    "hostname": "testHost1.lab.net",
+    "version": "15.1.0.4",
+    "product": "BIG-IP",
+    "platformMarketingName": "BIG-IP Virtual Edition",
+    "edition": "Point Release 4",
+    "build": "0.0.6",
+    "restFrameworkVersion": "15.1.0.4-0.0.6",
+    "managementAddress": "[2607:f0d0:1002:51::5]",
+    "mcpDeviceName": "/Common/testHost1.lab.net",
+    "isClustered": false,
+    "isVirtual": true,
+    "hypervisorType": "0",
+    "generation": 0,
+    "lastUpdateMicros": 0,
+    "kind": "shared:resolver:device-groups:deviceinfostate",
+    "selfLink": "https://localhost/mgmt/shared/identified-devices/config/device-info"
+}
+
+
+
 
 
 /**

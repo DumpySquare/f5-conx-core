@@ -250,14 +250,14 @@ export class F5Client {
 
 
 
-    /**
-     * refresh/get latest ATC metadata from 
-     * *** not implemented yet ***
-     * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
-     * todo: refresh this file with every packages release via git actions or package.json script
-     */
-    async refreshMetaData(): Promise<void> {
+    // /**
+    //  * refresh/get latest ATC metadata from 
+    //  * *** not implemented yet ***
+    //  * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
+    //  * todo: refresh this file with every packages release via git actions or package.json script
+    //  */
+    // async refreshMetaData(): Promise<void> {
 
-        return;
-    }
+    //     return;
+    // }
 }
