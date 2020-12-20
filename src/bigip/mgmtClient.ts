@@ -99,10 +99,12 @@ export class MgmtClient {
      * clear auth token and timer
      *  - used for logging out/disconnecting, and testing
      */
-    async clearToken(): Promise<void> {
-        this.events.emit('log-debug', `clearing token/timer`);
-        clearInterval(this._tokenIntervalId);
+    async clearToken(): Promise<number> {
+        this.events.emit('log-debug', `clearing token/timer with ${this._tokenTimeout} left`);
+        const tokenTimeOut = this._tokenTimeout;
         this._token = undefined;
+        clearInterval(this._tokenIntervalId);
+        return tokenTimeOut;
     }
 
     private createAxiosInstance(): AxiosInstance {
@@ -360,13 +362,16 @@ export class MgmtClient {
 
 
         let i = 0;  // loop counter
-        let resp: HttpResponse;
+        const responses: HttpResponse[] = [];
         // use taskId to control loop
         while (i < this._asyncRetry.max) {
 
             // set makeRequest to never throw an error, but keep going till a valid response
 
-            resp = await this.makeRequest(url);
+            const resp = await this.makeRequest(url);
+
+            // get the last response
+            responses.push(resp);
 
             // be thinking about expanding this to accomodate all flows like DO/ILX/... install
             //  where there could be catastrophic responses (network timeouts/tcp rejects/http errors)
@@ -377,17 +382,25 @@ export class MgmtClient {
 
 
             // todo: break out the successful and failed results, only refresh statusBars on successful
-            if (resp.data.status === 'FINISHED' || resp.data.status === 'FAILED') {
+            if (resp.data?.status === 'FINISHED' || resp.data?.status === 'FAILED') {
+                i = 1000;
+            }
 
-                return resp;
+            // as3 results array
+            if(resp.data.results && resp.data.results[0].message !== 'in progress'){
+                i = 1000;
             }
 
             i++;
-            await new Promise(resolve => { setTimeout(resolve, this._asyncRetry.interval); });
+            await new Promise(resolve => { setTimeout(resolve, this._asyncRetry.interval * 1000); });
         }
 
-        // debugger;
-        return resp;
+        // get last response to return
+        const response = responses.pop();
+        // inject array of remaining async req/resp
+        response.async = responses;
+
+        return response;
     }
 
 

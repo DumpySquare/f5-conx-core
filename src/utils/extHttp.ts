@@ -14,7 +14,7 @@ import https from 'https';
 import axios from 'axios';
 
 // import Logger from '../logger';
-import * as miscUtils from './misc';
+// import * as miscUtils from './misc';
 
 // const logger = Logger.getLogger();
 
@@ -66,7 +66,7 @@ export async function makeRequest(host: string, uri: string, options?: {
     // check for unsuccessful request
     if (httpResponse.status > 300) {
         return Promise.reject(new Error(
-            `HTTP request failed: ${httpResponse.status} ${miscUtils.stringify(httpResponse.data)}`
+            `HTTP request failed: ${httpResponse.status} ${JSON.stringify(httpResponse.data)}`
         ));
     }
     // return response body

@@ -6,6 +6,13 @@
  * higher level components
  */
 
+import path from "path"
+import fs from 'fs';
+
+// source file with path
+// const filePath = path.join(__dirname, 'artifacts', tmpUcs)
+// tmp directory
+const tmpDir = path.join(__dirname, 'tmp')
 
  // set env vars for the tests
 process.env.F5_CONX_CORE_TCP_TIMEOUT = "3000"
@@ -42,4 +49,29 @@ require('./f5Client_ipv6.int.tests')
 // ucs sub-class tests 
 require('./f5Client_ucs.int.tests')
 
+// AS3 class tests
+require('./as3Client.unit.tests')
 
+
+before(async function () {
+    if (!fs.existsSync(tmpDir)) {
+        console.log('creating temp directory for file upload/download tests')
+        fs.mkdirSync(tmpDir);
+    }
+
+});
+
+// runs once after the last test in this block
+after(function () {
+    // if the tmp directory exits, try to delete it
+    //  - should be empty, each test should clean up files as needed
+    if (fs.existsSync(tmpDir)) {
+        try {
+            console.log('deleting temp directory for file upload/download tests')
+            fs.rmdirSync(tmpDir);
+        } catch (e) {
+            console.error('was unable to delete tmp folder for upload/download tests, this typically means there are files in it that one of the tests did not clean up', e)
+            // todo: list dir contents, remove all
+        }
+    }
+});

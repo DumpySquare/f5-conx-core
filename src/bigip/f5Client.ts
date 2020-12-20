@@ -14,7 +14,6 @@ import { EventEmitter } from 'events';
 import { AtcMetaData, AtcInfo, F5InfoApi, F5DownLoad, F5Upload } from "./bigipModels";
 import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
 // import { MetadataClient } from "./metadata";
-import Logger from '../logger'
 
 import { MgmtClient } from "./mgmtClient";
 import { UcsClient } from "./ucsClient";
@@ -57,7 +56,6 @@ export class F5Client {
     do: DoClient | undefined;
     ts: TsClient | undefined;
     cf: CfClient | undefined;
-    logger: Logger;
     events: EventEmitter;
 
     constructor(
@@ -86,7 +84,7 @@ export class F5Client {
      * clear auth token
      *  - mainly for unit tests...
      */
-    async clearLogin(): Promise<void> {
+    async clearLogin(): Promise<number> {
         return this._mgmtClient.clearToken();
     }
 

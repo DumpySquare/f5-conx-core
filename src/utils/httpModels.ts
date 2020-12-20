@@ -51,6 +51,7 @@ export type HttpResponse<T = any> = {
     status: number,
     statusText: string,
     headers: unknown,
+    async?: HttpResponse[],
     // config?: F5HttpRequest,
     request: {
         baseURL: string,

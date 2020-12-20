@@ -51,18 +51,32 @@ export type F5Upload = 'ISO' | 'FILE'
 
 
 
-// // https://nodejs.org/docs/latest-v12.x/api/http.html#http_http_request_url_options_callback
-
-// // outgoing headers allows numbers (as they are converted internally to strings)
-// export type OutgoingHttpHeaders = {
-//     [header: string]: number | string | string[] | undefined ;
-// }
 
 
 
+/**
+ * as3 declaration type model
+ */
+export type As3Dec =  {
+    $schema?: string;
+    class: 'AS3';
+    action?: string;
+    persist?: boolean;
+    declaration: {
+        class: 'ADC';
+        schemaVersion: string;
+        id?: string;
+        label?: string;
+        remark?: string;
+        target?: unknown;
+        [key: string]: unknown;
+    };
+}
 
 
-
+/**
+ * atc service info type model
+ */
 export type AtcInfo = {
     version: string,
     release: string,

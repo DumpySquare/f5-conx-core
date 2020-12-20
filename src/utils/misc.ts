@@ -50,6 +50,16 @@ export function getRandomUUID(length: number, options?: {
     return result.join('');
 }
 
+
+// https://stackoverflow.com/questions/8834126/how-to-efficiently-check-if-variable-is-array-or-object-in-nodejs-v8
+export function isObject(a: unknown): boolean {
+    return (!!a) && (a.constructor === Object);
+}
+
+export function isArray(a: unknown): boolean {
+    return (!!a) && (a.constructor === Array);
+}
+
 // /**
 //  * Stringify
 //  * 
