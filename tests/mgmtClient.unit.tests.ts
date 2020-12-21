@@ -16,8 +16,8 @@ import path from 'path';
 
 
 // import { mgmtClient } from '../src/bigip/mgmtClient';
-import { defaultHost, defaultPassword, defaultUser, getMgmtClient, ipv6Host } from './fixtureUtils';
-import { getFakeToken } from './fixtureUtils';
+import { defaultHost, defaultPassword, defaultUser, getMgmtClient, ipv6Host } from '../src/utils/testingUtils';
+import { getFakeToken } from '../src/utils/testingUtils';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 import { F5DownloadPaths, F5UploadPaths } from '../src/constants';
 import { MgmtClient } from '../src/bigip/mgmtClient';

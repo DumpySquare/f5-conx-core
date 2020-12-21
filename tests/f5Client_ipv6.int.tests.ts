@@ -27,8 +27,8 @@ import {
 import { 
     getF5Client,
     ipv6Host 
-} from './fixtureUtils';
-import { getFakeToken } from './fixtureUtils';
+} from '../src/utils/testingUtils';
+import { getFakeToken } from '../src/utils/testingUtils';
 import localAtcMetadata from '../src/bigip/atc_metadata.json';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 import { F5DownloadPaths, F5UploadPaths } from '../src/constants';

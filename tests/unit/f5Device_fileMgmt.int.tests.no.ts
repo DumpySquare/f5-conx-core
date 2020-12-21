@@ -15,8 +15,8 @@ import path from 'path';
 
 
 import { F5Client } from '../../src/bigip/f5Client';
-import { getF5Client, ipv6Host } from '../fixtureUtils';
-import { getFakeToken } from '../fixtureUtils';
+import { getF5Client, ipv6Host } from '../src/utils/testingUtils';
+import { getFakeToken } from '../src/utils/testingUtils';
 import { AuthTokenReqBody } from '../../src/bigip/bigipModels';
 import { F5DownloadPaths } from '../../src/constants';
 

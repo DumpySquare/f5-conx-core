@@ -14,8 +14,8 @@ import nock from 'nock';
 import path from 'path';
 
 
-import { getF5Client, ipv6Host } from './fixtureUtils';
-import { getFakeToken } from './fixtureUtils';
+import { getF5Client, ipv6Host } from '../src/utils/testingUtils';
+import { getFakeToken } from '../src/utils/testingUtils';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 import {  iControlEndpoints } from '../src/constants';
 import { F5Client } from '../src/bigip/f5Client';
@@ -200,19 +200,14 @@ describe('as3Client integration tests', function () {
             })
 
 
-        const resp = await f5Client.as3.postDec({ 
+        const resp = f5Client.as3.postDec({ 
             declaration: {
                 class: 'Tenant',
                 something: 'missing'
             }
         })
-            .then(resp => resp)
-            .catch(err => {
-                // debugger;
-                return err
-            })
 
-        assert.deepStrictEqual(resp.message, "Request failed with status code 422");
+        await assert.rejects(resp);
     });
 
 
