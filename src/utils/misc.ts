@@ -9,10 +9,10 @@
 
 'use strict';
 
-// import fs from 'fs';
-// import crypto from 'crypto';
+import fs from 'fs';
+import crypto from 'crypto';
 
-// import * as constants from '../constants';
+import * as constants from '../constants';
 
 
 /**
@@ -53,6 +53,9 @@ export function getRandomUUID(length: number, options?: {
 
 // https://stackoverflow.com/questions/8834126/how-to-efficiently-check-if-variable-is-array-or-object-in-nodejs-v8
 export function isObject(a: unknown): boolean {
+    // the TS v4.0+ spec recommends using the following to detect an object...
+    // value !== null && typeof value === 'object'
+
     return (!!a) && (a.constructor === Object);
 }
 
@@ -71,70 +74,70 @@ export function isArray(a: unknown): boolean {
 //     return JSON.stringify(data);
 // }
 
-// /**
-//  * Function retrier
-//  *
-//  * @param func    function to execute
-//  * @param args    function args to provide
-//  * @param options function options
-//  *
-//  * @returns function response
-//  */
-// export async function retrier(
-//     func: Function,
-//     args: Array<any>, // eslint-disable-line @typescript-eslint/no-explicit-any
-//     options?: {
-//     thisContext?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-//     maxRetries?: number;
-//     retryInterval?: number;
-// }): Promise<object> {
-//     options = options || {};
+/**
+ * Function retrier
+ *
+ * @param func    function to execute
+ * @param args    function args to provide
+ * @param options function options
+ *
+ * @returns function response
+ */
+export async function retrier(
+    func: Function,
+    args: Array<any>, // eslint-disable-line @typescript-eslint/no-explicit-any
+    options?: {
+    thisContext?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    maxRetries?: number;
+    retryInterval?: number;
+}): Promise<object> {
+    options = options || {};
 
-//     const thisContext = options.thisContext || this;
-//     const retryCount = options.maxRetries || constants.RETRY.DEFAULT_COUNT;
-//     const retryInterval = options.retryInterval || constants.RETRY.DELAY_IN_MS;
+    const thisContext = options.thisContext || this;
+    const retryCount = options.maxRetries || constants.RETRY.DEFAULT_COUNT;
+    const retryInterval = options.retryInterval || constants.RETRY.DELAY_IN_MS;
 
-//     let i = 0;
-//     let response;
-//     let error;
-//     while (i < retryCount) {
-//         error = null;
-//         try {
-//             response = await func.apply(thisContext, args);
-//         } catch (err) {
-//             error = err;
-//         }
+    let i = 0;
+    let response;
+    let error;
+    while (i < retryCount) {
+        error = null;
+        try {
+            response = await func.apply(thisContext, args);
+        } catch (err) {
+            error = err;
+        }
 
-//         if (error === null) {
-//             i = retryCount;
-//         } else {
-//             await new Promise(resolve => setTimeout(resolve, retryInterval));
-//             i += 1;
-//         }
-//     }
+        if (error === null) {
+            i = retryCount;
+        } else {
+            await new Promise(resolve => setTimeout(resolve, retryInterval));
+            i += 1;
+        }
+    }
 
-//     if (error !== null) {
-//         return Promise.reject(error);
-//     }
-//     return response;
-// }
+    if (error !== null) {
+        return Promise.reject(error);
+    }
+    return response;
+}
 
-// /**
-//  * Verify file against provided hash
-//  *
-//  * @param file local file location
-//  * @param hash expected SHA 256 hash
-//  *
-//  * @returns true/false based on hash verification result
-//  */
-// export function verifyHash(file: string, extensionHash: string): boolean {
-//     const createHash = crypto.createHash('sha256');
-//     const input = fs.readFileSync(file);
-//     createHash.update(input);
-//     const computedHash = createHash.digest('hex');
+/**
+ * Verify file against provided hash
+ *
+ * @param file local file location
+ * @param hash expected SHA 256 hash
+ *
+ * @returns true/false based on hash verification result
+ */
+export function verifyHash(file: string, extensionHash: string): boolean {
+    const createHash = crypto.createHash('sha256');
+    const input = fs.readFileSync(file);
+    createHash.update(input);
+    const computedHash = createHash.digest('hex');
 
-//     if (extensionHash !== computedHash) {
-//         return false;
-//     }
-//     return true;
-// }
+    if (extensionHash !== computedHash) {
+        return false;
+    }
+    return true;
+}

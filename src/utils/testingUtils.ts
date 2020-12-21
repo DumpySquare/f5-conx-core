@@ -6,12 +6,12 @@
  * the software product on devcentral.f5.com.
  */
 
-import { F5Client } from '../src/bigip/f5Client';
-import { Token } from '../src/bigip/bigipModels';
-import { getRandomUUID } from '../src/utils/misc'
+import { F5Client } from '../bigip/f5Client';
+import { MgmtClient } from '../bigip/mgmtClient';
+import { Token } from '../bigip/bigipModels';
+import { getRandomUUID } from './misc'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { localDev } from './localTestDevice'
-import { MgmtClient } from '../src/bigip/mgmtClient';
+// import { localDev } from '../../tests/localTestDevice'
 
 
 
@@ -22,21 +22,8 @@ export const defaultPassword = '@utomateTheW0rld!';
 
 export const ipv6Host = '[2607:f0d0:1002:51::5]'
 
-// function setEnvs(): void {
-
-//     // set env vars
-
-//     process.env.F5_CONX_CORE_TCP_TIMEOUT = "3000"
-
-//     process.env.F5_CONX_CORE_LOG_LEVEL = "debug"
-//     process.env.F5_CONX_CORE_LOG_BUFFER = "true"
-//     process.env.F5_CONX_CORE_LOG_CONSOLE = "false"
-// }
-
 
 export function getMgmtClient(): MgmtClient {
-
-    // setEnvs();
 
     return new MgmtClient(
         defaultHost,

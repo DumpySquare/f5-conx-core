@@ -100,7 +100,7 @@ export class MgmtClient {
      *  - used for logging out/disconnecting, and testing
      */
     async clearToken(): Promise<number> {
-        this.events.emit('log-debug', `clearing token/timer with ${this._tokenTimeout} left`);
+        this.events.emit('log-info', `clearing token/timer with ${this._tokenTimeout} left`);
         const tokenTimeOut = this._tokenTimeout;
         this._token = undefined;
         clearInterval(this._tokenIntervalId);
@@ -115,10 +115,13 @@ export class MgmtClient {
             httpsAgent: new https.Agent({
                 rejectUnauthorized: false,
             }),
+            headers: {
+                'content-type': 'application/json'
+            },
             transport
         });
 
-        // re-assign parent this objectes needed within the instance objects...
+        // re-assign parent this objects needed within the instance objects...
         const events = this.events;
         const clearToken = function() {
             this.clearToken()
@@ -134,13 +137,12 @@ export class MgmtClient {
             // config.uuid = getRandomUUID(4, { simple: true })
             config.uuid = config?.uuid ? config.uuid : getRandomUUID(4, { simple: true })
 
-            events.emit('log-debug', `HTTPS-REQU [${config.uuid}]: ${config.method} -> ${config.baseURL}${config.url}`)
+            events.emit('log-info', `HTTPS-REQU [${config.uuid}]: ${config.method} -> ${config.baseURL}${config.url}`)
 
             return config;
         }, function (err) {
             // Do something with request error
             // not sure how to test this, but it is probably handled up the chain
-            /* istanbul ignore next */
             return Promise.reject(err);
         });
 
@@ -149,8 +151,7 @@ export class MgmtClient {
             // Any status code that lie within the range of 2xx cause this function to trigger
             // Do something with response data
             
-            // events.emit('log-debug', `HTTPS-REQU [${config.uuid}]: ${config.method} -> ${config.baseURL}${config.url}`)
-            events.emit('log-debug', `HTTPS-RESP [${resp.config.uuid}]: ${resp.status} - ${resp.statusText}`);
+            events.emit('log-info', `HTTPS-RESP [${resp.config.uuid}]: ${resp.status} - ${resp.statusText}`);
 
             return resp;
         }, function (err) {
@@ -238,10 +239,6 @@ export class MgmtClient {
             await this.getToken();
         }
 
-  
-        // this.logger.debug(`HTTPS-REQUEST [${options.uuid}]: ${options?.method || 'GET'} -> ${this.host}:${this.port}${uri}`);
-
-
         const requestDefaults = {
             url: uri,
             method: options?.method || undefined,
@@ -254,16 +251,9 @@ export class MgmtClient {
         // merge incoming options into requestDefaults object
         options = Object.assign(requestDefaults, options)
 
-        // inject a uuid if we don't have one already
-        // options.uuid = options?.uuid ? options.uuid : getRandomUUID(4, { simple: true })
-
-        // this.events.emit('log-debug', `HTTPS-REQU [${options.uuid}]: ${options?.method || 'GET'} -> ${this.host}:${this.port}${uri}`);
-
         return await this.axios(options)
             .then( (resp: AxiosResponseWithTimings) => {
 
-                // log response
-                // this.events.emit('log-debug', `HTTPS-RESP [${options.uuid}]: ${resp.status} - ${resp.statusText}`);
 
                 // only return the things we need
                 return {
@@ -291,14 +281,34 @@ export class MgmtClient {
                     // The request was made and the server responded with a status code
                     // that falls out of the range of 2xx
                     this.events.emit('log-debug', `HTTPS-RESP [${err.response.config.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
-                    // return Promise.reject(err.response)
+                    
+                    // only return the things we need...  we'll see...
+                    return Promise.reject({
+                        data: err.response.data,
+                        headers: err.response.headers,
+                        status: err.response.status,
+                        statusText: err.response.statusText,
+                        request: {
+                            uuid: err.response.config.uuid,
+                            baseURL: err.response.config.baseURL,
+                            url: err.response.config.url,
+                            method: err.request.method,
+                            headers: err.request.headers,
+                            protocol: err.response.config.httpsAgent.protocol,
+                            timings: err.request.timings
+                        }
+                    })
 
                 } else if (err.request) {
 
                     // The request was made but no response was received
                     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
                     // http.ClientRequest in node.js
-                    this.events.emit('log-debug', `HTTPS-REQUEST-FAILED [path:${err.request.path}]: ${err.message}`)
+                    this.events.emit('log-error', {
+                        message: 'HTTPS-REQUEST-FAILED',
+                        path: err.request.path,
+                        err: err.message
+                    })
                     // return Promise.reject(err.request)
 
                 } else {
@@ -306,7 +316,11 @@ export class MgmtClient {
                     // got a lower level (config) failure
                     // not sure how to test this...
                     /* istanbul ignore next */
-                    this.events.emit('log-debug', `HTTPS request failed [${err.response.config.uuid}]: ${JSON.stringify(err)}`)
+                    this.events.emit('log-error', {
+                        message: 'HTTPS request failed',
+                        uuid: err.response.config.uuid,
+                        err
+                    })
 
                 }
                 return Promise.reject(err)
