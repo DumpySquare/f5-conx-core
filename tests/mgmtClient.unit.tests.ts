@@ -209,6 +209,9 @@ describe('mgmtClient unit tests - successes', function () {
 
 
     it('follow async post/response', async function () {
+
+        this.slow(21000);
+
         nockInst
             .get(`/test/1`)
             .reply(200, { status: 'started->inProgress'} )

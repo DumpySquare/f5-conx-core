@@ -60,9 +60,10 @@ describe('mgmtClient tests - failures', async function () {
         mgmtClientLocal.events.on('log-error', msg => eventsLocal.push(msg));
 
         await mgmtClientLocal.makeRequest('/foo')
-            // .then( resp => {
-            //  // look at response
-            // })
+            .then( resp => {
+             // look at response
+             resp
+            })
             .catch(err => {
                 // if this test failed, check events to see why
                 // debugger;
@@ -71,7 +72,7 @@ describe('mgmtClient tests - failures', async function () {
             // examples:
             // 'token request failed: connect ETIMEDOUT 192.0.0.1:8443'
             // 'token request failed: timeout of 3000ms exceeded'
-        assert.ok(JSON.stringify(eventsLocal).includes('token request failed'))
+        assert.ok(eventsLocal[eventsLocal.length - 1].includes('token request failed'))
     });
 
     it('fail host dns resolve', async function () {

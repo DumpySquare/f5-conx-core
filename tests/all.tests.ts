@@ -8,11 +8,12 @@
 
 import path from "path"
 import fs from 'fs';
+import { TMP_DIR } from '../src/constants'
 
 // source file with path
 // const filePath = path.join(__dirname, 'artifacts', tmpUcs)
 // tmp directory
-const tmpDir = path.join(__dirname, 'tmp')
+const tmpDir = path.join(__dirname, TMP_DIR)
 
  // set env vars for the tests
 process.env.F5_CONX_CORE_TCP_TIMEOUT = "3000"
@@ -24,7 +25,7 @@ process.env.F5_CONX_CORE_LOG_CONSOLE = "false"
 require('./logger.unit.tests')
 
 // unit test external http functions
-// require('./extHttp.unit.tests')
+require('./extHttp.unit.tests')
 
 // unit test iHealth client class (uses extHttp.ts)
 // require('./iHealth.unit.tests)

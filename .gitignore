@@ -12,6 +12,8 @@ deployment_info.json
 .nyc_output/
 # Temp Files
 tmp_*
+# more f5 temp files
+f5_cache/
 # local live test f5 details
 tests/localTestDevice.ts
 # local env file

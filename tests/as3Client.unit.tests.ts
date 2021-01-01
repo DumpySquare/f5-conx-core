@@ -216,6 +216,8 @@ describe('as3Client integration tests', function () {
 
     it('post sample declaration', async function () {
 
+        this.slow(12000);
+
         nockInst
             .post('/mgmt/shared/appsvcs/declare?async=true')
             .reply(202, { "id": "88ab689d-84c6-461f-b324-2685a1d447c9" })
@@ -375,6 +377,8 @@ describe('as3Client integration tests', function () {
 
     it('post sample declaration - async (again)', async function () {
 
+        this.slow(12000);
+        
         nockInst
             .post('/mgmt/shared/appsvcs/declare?async=true')
             .reply(202, { "id": "2685a1d447c9" })

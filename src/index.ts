@@ -11,7 +11,7 @@
 
 
 export * from './utils/httpModels'
-export * as extHttp from './utils/extHttp';
+export * from './externalHttps';
 
 export * from './iHealthClient'
 

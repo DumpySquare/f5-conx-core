@@ -149,7 +149,7 @@ describe('f5Client UCS integration tests - ipv6', function () {
 
 
     it('generate default UCS on f5', async function () {
-        this.slow(6000);
+        this.slow(12000);
         let ucsFileName;
 
         nockScope
@@ -205,7 +205,6 @@ describe('f5Client UCS integration tests - ipv6', function () {
 
     it('create ucs with passphrase and no-private-keys on f5', async function () {
 
-        // this.slow(6000);
         let reqBody: { file: string, action: string, passphrase: string };
 
         nockScope
@@ -329,7 +328,7 @@ describe('f5Client UCS integration tests - ipv6', function () {
 
     it('get UCS (generate and download)', async function () {
 
-        this.slow(6000);
+        this.slow(12000);
         let ucsFileName;
 
         nockScope

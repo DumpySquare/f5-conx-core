@@ -95,7 +95,7 @@ describe('f5Client qkview integration tests - ipv6', function () {
 
 
     it('create default qkview on f5', async function () {
-        this.slow(6000);
+        this.slow(12000);
 
 
         nockScope
@@ -211,7 +211,7 @@ describe('f5Client qkview integration tests - ipv6', function () {
 
     it('get qkview (generate and download)', async function () {
 
-        this.slow(6000);
+        this.slow(12000);
         let fileName;
 
         nockScope
