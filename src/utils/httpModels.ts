@@ -12,6 +12,7 @@
 import { Timings } from "@szmarczak/http-timer/dist/source";
 import { AxiosRequestConfig, AxiosResponse, Method, ResponseType } from "axios";
 
+// the following models are for making and using http requests within this project (what the end user will use/see).  It seems easier to re-define the model here instead of inheriting from the official axios models.  With multiple layers of model inheritance (inheriting base models from axios), the user looses visibility into what the model actually looks like when using vscode hover/intellisense.  
 
 
 export type F5HttpRequest = {
@@ -29,19 +30,6 @@ export type F5HttpRequest = {
     }
 }
 
-export interface AxiosResponseWithTimings extends AxiosResponse {
-    config: uuidAxiosRequestConfig
-}
-
-
-// export interface HttpResponse extends AxiosResponse {
-//     timings?: Timings;
-//     config: uuidAxiosRequestConfig
-// }
-
-export interface uuidAxiosRequestConfig extends AxiosRequestConfig {
-    uuid?: string
-}
 
 /**
  * custom http response with timings, based on axios response
@@ -52,7 +40,6 @@ export type HttpResponse<T = any> = {
     statusText: string,
     headers: unknown,
     async?: HttpResponse[],
-    // config?: F5HttpRequest,
     request: {
         baseURL: string,
         url: string,
@@ -63,3 +50,21 @@ export type HttpResponse<T = any> = {
         timings: Timings,
     };
 };
+
+
+
+
+
+
+
+// the following are only used for setting up the axios instance and injecting the uuid/timing.  
+export interface AxiosResponseWithTimings extends AxiosResponse {
+    config: uuidAxiosRequestConfig
+}
+
+
+export interface uuidAxiosRequestConfig extends AxiosRequestConfig {
+    uuid?: string,
+    transport?: unknown
+}
+

@@ -69,7 +69,7 @@ export class UcsClient {
     async get(
         options?: {
             fileName?: string,
-            localDestPathFile?: string,
+            localDestPathFile: string,
             passPhrase?: string,
             noPrivateKeys?: boolean,
             mini?: boolean;

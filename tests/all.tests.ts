@@ -49,6 +49,9 @@ require('./f5Client_ipv6.int.tests')
 // ucs sub-class tests 
 require('./f5Client_ucs.int.tests')
 
+// ucs sub-class tests 
+require('./f5Client_qkview.int.tests')
+
 // AS3 class tests
 require('./as3Client.unit.tests')
 

@@ -10,7 +10,6 @@
 
 import { inspect } from 'util';
 
-import * as constants from './constants';
 
 const LOG_LEVELS = {
     error: 3,
@@ -75,12 +74,6 @@ export default class Logger {
         return Logger.instance;
     }
 
-    // /**
-    //  * get logs from buffer/journal
-    //  */
-    // getLogs(): string[] {
-    //     return this.journal;
-    // }
 
     /**
      * clear/delete buffer/journal
@@ -177,7 +170,7 @@ export default class Logger {
 
     private _checkLogLevel(): string {
         const logLevels = Object.keys(LOG_LEVELS);
-        const logLevelFromEnvVar = process.env[constants.ENV_VARS.LOG_LEVEL];
+        const logLevelFromEnvVar = process.env.F5_CONX_CORE_LOG_LEVEL;
 
         
         if(process.env.F5_CONX_CORE_LOG_BUFFER){
@@ -191,6 +184,7 @@ export default class Logger {
         if (logLevelFromEnvVar && logLevels.includes(logLevelFromEnvVar.toLowerCase())) {
             return logLevelFromEnvVar.toLowerCase();
         }
+        
         return 'info';
 
     }

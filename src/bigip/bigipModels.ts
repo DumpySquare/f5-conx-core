@@ -30,10 +30,6 @@ export type AuthTokenReqBody = {
  * - ISO
  *   - uri: /mgmt/cm/autodeploy/software-image-downloads/${fileName}
  *   - path: /shared/images/${fileName}
- * 
- * 
- * K04396542: Generating a QKView diagnostic file using the iControl REST API
- *  - https://support.f5.com/csp/article/K04396542
  */
 export type F5DownLoad = 'UCS' | 'QKVIEW' | 'ISO'
 

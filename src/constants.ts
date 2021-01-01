@@ -8,21 +8,8 @@
 
 'use strict';
 
-export const TMP_DIR = '/tmp';
+export const TMP_DIR = '/f5_cache';
 
-export const HTTP_STATUS_CODES = {
-    ACCEPTED: 202,
-    OK: 200
-};
-
-export const RETRY = {
-    DEFAULT_COUNT: 100,
-    DELAY_IN_MS: 1000
-};
-
-export const ENV_VARS = {
-    LOG_LEVEL: 'F5_CONX_CORE_LOG_LEVEL'
-};
 
 /**
  * Common iControl/tmos api endpoints
@@ -34,7 +21,8 @@ export const iControlEndpoints = {
     backup: '/mgmt/tm/shared/sys/backup',
     ucs: '/mgmt/tm/sys/ucs',
     ucsTasks: '/mgmt/tm/task/sys/ucs',
-    sharedUcsBackup: '/mgmt/tm/shared/sys/backup'
+    sharedUcsBackup: '/mgmt/tm/shared/sys/backup',
+    qkview: '/mgmt/cm/autodeploy/qkview'
 }
 
 /**

@@ -17,6 +17,7 @@ import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
 
 import { MgmtClient } from "./mgmtClient";
 import { UcsClient } from "./ucsClient";
+import { QkviewClient } from "./qkviewClient";
 import { FastClient } from "./fastClient";
 import { As3Client } from "./as3Client";
 import { DoClient } from "./doClient";
@@ -50,7 +51,8 @@ export class F5Client {
     // protected _metadataClient: MetadataClient;
     protected _atcMetaData: AtcMetaData = localAtcMetadata;
     host: F5InfoApi | undefined;
-    ucs: UcsClient | undefined;
+    ucs: UcsClient;
+    qkview: QkviewClient;
     fast: FastClient | undefined;
     as3: As3Client | undefined;
     do: DoClient | undefined;
@@ -126,7 +128,7 @@ export class F5Client {
         this.ucs = new UcsClient(this._mgmtClient)
 
         // setup qkviewClient
-        // this.qkview = new QkviewClient(this._mgmtClient)
+        this.qkview = new QkviewClient(this._mgmtClient)
 
 
 

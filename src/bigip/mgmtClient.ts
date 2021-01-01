@@ -59,10 +59,6 @@ export class MgmtClient {
     protected _token: Token | undefined;
     protected _tokenTimeout: number | undefined;
     protected _tokenIntervalId: NodeJS.Timeout | undefined;
-    private _asyncRetry = {
-        max: 30,
-        interval: 3
-    }
 
 
     /**
@@ -109,8 +105,8 @@ export class MgmtClient {
 
     private createAxiosInstance(): AxiosInstance {
 
-        // create axsios instance
-        const axInstance = axios.create({
+
+        const baseInstanceParams: uuidAxiosRequestConfig = {
             baseURL: `https://${this.host}:${this.port}`,
             httpsAgent: new https.Agent({
                 rejectUnauthorized: false,
@@ -119,11 +115,15 @@ export class MgmtClient {
                 'content-type': 'application/json'
             },
             transport
-        });
+        }
 
-        // re-assign parent this objects needed within the instance objects...
+
+        // create axsios instance
+        const axInstance = axios.create(baseInstanceParams);
+
+        // re-assign parent this objects needed within the parent instance objects...
         const events = this.events;
-        const clearToken = function() {
+        const clearToken = function () {
             this.clearToken()
         }
 
@@ -150,13 +150,13 @@ export class MgmtClient {
         axInstance.interceptors.response.use(function (resp: AxiosResponseWithTimings) {
             // Any status code that lie within the range of 2xx cause this function to trigger
             // Do something with response data
-            
+
             events.emit('log-info', `HTTPS-RESP [${resp.config.uuid}]: ${resp.status} - ${resp.statusText}`);
 
             return resp;
         }, function (err) {
             // Any status codes that falls outside the range of 2xx cause this function to trigger
-            
+
             // if we got a failed password response
             if (
                 err.response?.status === 401 &&
@@ -165,7 +165,7 @@ export class MgmtClient {
                 // fire failed password event so upper logic can clear details
                 // this.events.emit('failedAuth');
                 events.emit('failedAuth', err.response.data);
-                
+
                 clearToken();  // clear the token anyway
             }
 
@@ -252,7 +252,7 @@ export class MgmtClient {
         options = Object.assign(requestDefaults, options)
 
         return await this.axios(options)
-            .then( (resp: AxiosResponseWithTimings) => {
+            .then((resp: AxiosResponseWithTimings) => {
 
 
                 // only return the things we need
@@ -281,7 +281,7 @@ export class MgmtClient {
                     // The request was made and the server responded with a status code
                     // that falls out of the range of 2xx
                     this.events.emit('log-debug', `HTTPS-RESP [${err.response.config.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
-                    
+
                     // only return the things we need...  we'll see...
                     return Promise.reject({
                         data: err.response.data,
@@ -374,11 +374,17 @@ export class MgmtClient {
             await this.getToken();
         }
 
+        //  build async wait array -> progressively waits longer
+        //  https://stackoverflow.com/questions/12503146/create-an-array-with-same-element-repeated-multiple-times
+        // first 4 rounds, wait 5 seconds each (20 seconds total)
+        const retryTimerArray = Array.from({ length: 4 }, () => 5)
+        // next 6 rounds, wait 10 seconds each (1 minute total)
+        retryTimerArray.push(...Array.from({ length: 6 }, () => 10))
+        // next 30 rounds, wait 30 seconds each (15 minutes total)
+        retryTimerArray.push(...Array.from({ length: 30 }, () => 30))
 
-        let i = 0;  // loop counter
         const responses: HttpResponse[] = [];
-        // use taskId to control loop
-        while (i < this._asyncRetry.max) {
+        while (retryTimerArray.length > 0) {
 
             // set makeRequest to never throw an error, but keep going till a valid response
 
@@ -397,16 +403,24 @@ export class MgmtClient {
 
             // todo: break out the successful and failed results, only refresh statusBars on successful
             if (resp.data?.status === 'FINISHED' || resp.data?.status === 'FAILED') {
-                i = 1000;
+                retryTimerArray.length = 0;
+            }
+
+            // QKVIEW async job responses
+            //  "IN_PROGRESS"
+            if (resp.data?.status === 'SUCCEEDED') {
+                retryTimerArray.length = 0;
             }
 
             // as3 results array
-            if(resp.data.results && resp.data.results[0].message !== 'in progress'){
-                i = 1000;
+            if (resp.data?.results && resp.data.results[0].message !== 'in progress') {
+                retryTimerArray.length = 0;
             }
 
-            i++;
-            await new Promise(resolve => { setTimeout(resolve, this._asyncRetry.interval * 1000); });
+            await new Promise(resolve => {
+                // take the first array item off and use it as a delay timer
+                setTimeout(resolve, retryTimerArray.shift() * 1000);
+            });
         }
 
         // get last response to return
@@ -448,6 +462,12 @@ export class MgmtClient {
                 : downloadType === 'QKVIEW' ? `${F5DownloadPaths.qkview.uri}/${fileName}`
                     : `${F5DownloadPaths.iso.uri}/${fileName}`;
 
+        //  if we got a dest path with no filename, append the filename
+        const fileP
+            = path.parse(localDestPath).ext
+                ? localDestPath
+                : `${localDestPath}/${fileName}`;
+
         this.events.emit('log-debug', {
             message: 'pending download',
             fileName,
@@ -455,7 +475,7 @@ export class MgmtClient {
             downloadType
         })
 
-        const writable = fs.createWriteStream(localDestPath)
+        const writable = fs.createWriteStream(fileP)
 
         return new Promise(((resolve, reject) => {
 
