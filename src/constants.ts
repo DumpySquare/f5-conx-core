@@ -22,7 +22,16 @@ export const iControlEndpoints = {
     ucs: '/mgmt/tm/sys/ucs',
     ucsTasks: '/mgmt/tm/task/sys/ucs',
     sharedUcsBackup: '/mgmt/tm/shared/sys/backup',
-    qkview: '/mgmt/cm/autodeploy/qkview'
+    qkview: '/mgmt/cm/autodeploy/qkview',
+    atcPackageMgmt: '/mgmt/shared/iapp/package-management-tasks'
+}
+
+
+export const AtcGitReleases = {
+    fast: 'https://api.github.com/repos/F5Networks/f5-appsvcs-templates/releases',
+    as3: 'https://api.github.com/repos/F5Networks/f5-appsvcs-extension/releases',
+    do: 'https://api.github.com/repos/F5Networks/f5-declarative-onboarding/releases',
+    ts: 'https://api.github.com/repos/F5Networks/f5-telemetry-streaming/releases',
 }
 
 /**

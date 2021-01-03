@@ -27,8 +27,11 @@ require('./logger.unit.tests')
 // unit test external http functions
 require('./extHttp.unit.tests')
 
-// unit test iHealth client class (uses extHttp.ts)
+// unit test iHealth client class (extends external https class)
 // require('./iHealth.unit.tests)
+
+// unit test atc ilx rpm mgmt (versions/download/upload/install/unInstall)
+require('./f5Client_atcMgmt.int.tests')
 
 // unit test core mgmtClient failures
 require('./mgmtClient.failures.unit.test')
@@ -55,6 +58,18 @@ require('./f5Client_qkview.int.tests')
 
 // AS3 class tests
 require('./as3Client.unit.tests')
+
+// // fast class tests
+// require('./fastClient.unit.tests')
+
+// // do class tests
+// require('./doClient.unit.tests')
+
+// // ts class tests
+// require('./tsClient.unit.tests')
+
+// // cf class tests
+// require('./cfClient.unit.tests')
 
 
 before(async function () {

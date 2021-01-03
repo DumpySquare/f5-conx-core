@@ -53,6 +53,8 @@ describe('mgmtClient unit tests - successes', function () {
         // setup mgmt client
         mgmtClient = getMgmtClient();
 
+        // mgmtClient = new MgmtClient('192.168.200.131', 'admin', 'benrocks')
+
         // setup events collection
         mgmtClient.events.on('failedAuth', msg => events.push(msg));
         mgmtClient.events.on('log-debug', msg => events.push(msg));

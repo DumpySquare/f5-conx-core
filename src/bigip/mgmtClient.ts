@@ -243,7 +243,7 @@ export class MgmtClient {
             url: uri,
             method: options?.method || undefined,
             headers: Object.assign(options?.headers || {}, {
-                'X-F5-Auth-Token': this._token?.token
+                'x-f5-auth-token': this._token?.token
             }),
             data: options?.data || undefined
         }
@@ -400,9 +400,14 @@ export class MgmtClient {
             // if ILX install follow services restart...
             // if DO follow device restart...
 
+            if (resp.data?.status === 'FAILED') {
+                // got an http/200, but the job failed, so reject promise and push the error back up the stack
+                return Promise.reject(resp);
+            }
+
 
             // todo: break out the successful and failed results, only refresh statusBars on successful
-            if (resp.data?.status === 'FINISHED' || resp.data?.status === 'FAILED') {
+            if (resp.data?.status === 'FINISHED' ) {
                 retryTimerArray.length = 0;
             }
 
@@ -415,6 +420,15 @@ export class MgmtClient {
             // as3 results array
             if (resp.data?.results && resp.data.results[0].message !== 'in progress') {
                 retryTimerArray.length = 0;
+            }
+
+            // if atc rpm mgmt -> watch for restnoded service restart
+            if (resp.data?.apiRawValues?.apiAnonymous) {
+                console.log(resp.data?.apiRawValues.apiAnonymous)
+                if (resp.data.apiRawValues.apiAnonymous.includes('run')) {
+                    console.log('ending service watch')
+                    retryTimerArray.length = 0;
+                }
             }
 
             await new Promise(resolve => {
@@ -521,7 +535,7 @@ export class MgmtClient {
      *  - path: '/shared/images'
      * 
      * https://devcentral.f5.com/s/articles/demystifying-icontrol-rest-part-5-transferring-files
-     * 
+     * https://support.f5.com/csp/article/K41763344
      * @param localSourcePathFilename 
      * @param uploadType
      */
@@ -536,7 +550,7 @@ export class MgmtClient {
         const responses = [];
         const fileName = path.parse(localSourcePathFilename).base;
         const fileStats = fs.statSync(localSourcePathFilename);
-        const chunkSize = 1024 * 1024;
+        const chunkSize = 512 * 1024;
         let start = 0;
         let end = Math.min(chunkSize, fileStats.size - 1);
 
@@ -556,14 +570,12 @@ export class MgmtClient {
             const resp = await this.makeRequest(url, {
                 method: 'POST',
                 headers: {
-                    'X-F5-Auth-Token': this._token.token,
-                    'Content-Type': 'application/octet-stream',
-                    'Content-Range': `${start}-${end}/${fileStats.size}`,
-                    'Content-Length': end - start + 1
+                    'content-type': 'application/octet-stream',
+                    'content-range': `${start}-${end}/${fileStats.size}`,
+                    'content-length': end - start + 1
                 },
                 data: fs.createReadStream(localSourcePathFilename, { start, end }),
-                // contentType: 'raw'
-            });
+            })
 
             start += chunkSize;
             if (end + chunkSize < fileStats.size - 1) { // more to go

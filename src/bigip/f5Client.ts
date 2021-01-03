@@ -23,8 +23,10 @@ import { As3Client } from "./as3Client";
 import { DoClient } from "./doClient";
 import { TsClient } from "./tsClient";
 import { CfClient } from "./cfClient";
+import { AtcMgmtClient } from "./atcMgmtClient";
 
 import localAtcMetadata from './atc_metadata.json';
+import { ExtHttp } from '../externalHttps';
 
 
 /**
@@ -51,6 +53,7 @@ export class F5Client {
     // protected _metadataClient: MetadataClient;
     protected _atcMetaData: AtcMetaData = localAtcMetadata;
     host: F5InfoApi | undefined;
+    atc: AtcMgmtClient;
     ucs: UcsClient;
     qkview: QkviewClient;
     fast: FastClient | undefined;
@@ -64,20 +67,32 @@ export class F5Client {
         host: string,
         user: string,
         password: string,
-        options?: {
+        hostOptions?: {
             port?: number,
             provider?: string,
-        }
+        },
+        extHttp?: ExtHttp
     ) {
         this._mgmtClient = new MgmtClient(
             host,
             user,
             password,
-            options
+            hostOptions
         )
 
         // get event emitter instance from mgmtClient
         this.events = this._mgmtClient.getEvenEmitter();
+
+        // setup ucsClient
+        this.ucs = new UcsClient(this._mgmtClient)
+
+        // setup qkviewClient
+        this.qkview = new QkviewClient(this._mgmtClient)
+
+
+        // setup atc rpm ilx mgmt
+        this.atc = new AtcMgmtClient(this._atcMetaData, this._mgmtClient, extHttp)
+        
     }
 
 
@@ -122,14 +137,6 @@ export class F5Client {
                 this.host = resp.data
                 this._mgmtClient.hostInfo = resp.data
             })
-
-
-        // setup ucsClient
-        this.ucs = new UcsClient(this._mgmtClient)
-
-        // setup qkviewClient
-        this.qkview = new QkviewClient(this._mgmtClient)
-
 
 
         // check FAST installed by getting verion info
