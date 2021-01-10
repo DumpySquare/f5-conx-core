@@ -52,9 +52,44 @@ describe('ExtHttps class tests', function () {
         extHttp.events.on('log-error', msg => events.push(msg));
     });
 
-    afterEach( function () {
+    afterEach(function () {
         events.length = 0;
     })
+
+
+
+    it('create instance with rejectUnauthorized - make test call', async () => {
+
+        nockScope
+            .post('/post')
+            .reply(function (uri, body) {
+                return [
+                    200,
+                    body,
+                ]
+            })
+
+        // instantiate new client
+        const newExtHttp = new ExtHttp({ rejectUnauthorized: false });
+
+        await newExtHttp.makeRequest({
+            url: `https://${testHost}/post`,
+            method: "POST",
+            data: {
+                hi: "yo"
+            }
+        })
+            .then(resp => {
+
+                assert.deepStrictEqual(resp.data, { hi: "yo" })
+                // There is really no good way to test this since it's an internal setting we pass to axios that we can't really see later in any call, furthermore, with nock, there all requests are probably made with a self-signed cert and the testing framework is setting this setting anyway.  But this test will actually make sure the setting can be set and doesn't cause any errors
+            })
+            .catch(err => {
+                debugger;
+                return Promise.reject(err)
+            })
+    })
+
 
 
 
@@ -89,7 +124,7 @@ describe('ExtHttps class tests', function () {
                 return [
                     200,
                     { value: 'something' },
-                    { 
+                    {
                         headerone: this.req.headers['headerone'],
                         "user-agent": this.req.headers['user-agent']
                     },
@@ -118,13 +153,13 @@ describe('ExtHttps class tests', function () {
     it('make simple https post', async () => {
 
         nockScope
-        .post('/post')
-        .reply(function (uri, body) {
-            return [
-                200,
-                body,
-            ]
-        })
+            .post('/post')
+            .reply(function (uri, body) {
+                return [
+                    200,
+                    body,
+                ]
+            })
 
         await extHttp.makeRequest({
             url: `https://${testHost}/post`,
@@ -146,16 +181,18 @@ describe('ExtHttps class tests', function () {
 
 
 
+
     it('download file', async function () {
-        
+
         this.slow(1000);
 
         nockScope
-        .get(`/${rpm}`)
-        .replyWithFile(200, filePath);
+            .get(`/${rpm}`)
+            .replyWithFile(200, filePath);
 
+        const url = `https://${testHost}/${rpm}`;
 
-        await extHttp.download(`https://${testHost}/${rpm}`, rpm, tmpDir)
+        await extHttp.download(url, undefined, tmpDir)
             .then(resp => {
 
                 // assert it downloaded the file we wanted
@@ -171,5 +208,33 @@ describe('ExtHttps class tests', function () {
             });
     });
 
+
+
+
+    it('upload file', async function () {
+        this.slow(1000);
+
+        // this is just a general test to uploading a file with this project
+
+        nockScope
+            .persist()
+            .post(`/upload/${rpm}`)
+            .reply(200, { upload: 'successful' });
+
+        const url = `https://${testHost}/upload/${rpm}`;
+
+        await extHttp.upload(url, filePath)
+            .then(resp => {
+                // assert that the function completed and returned expected details
+                assert.deepStrictEqual(resp.data.fileName, rpm)
+                assert.ok(resp.data.bytes > 100)
+
+            })
+            .catch(err => {
+                debugger;
+                return Promise.reject(err)
+            });
+
+    });
 
 });

@@ -1,4 +1,12 @@
+/*
+ * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
+ * license terms. Notwithstanding anything to the contrary in the EULA, Licensee
+ * may copy and modify this software product for its internal business purposes.
+ * Further, Licensee may upload, publish and distribute the modified version of
+ * the software product on devcentral.f5.com.
+ */
 
+'use strict';
 
 /**
  * This test suite is a mix of unit/integration tests
@@ -13,9 +21,11 @@ import { TMP_DIR } from '../src/constants'
 // source file with path
 // const filePath = path.join(__dirname, 'artifacts', tmpUcs)
 // tmp directory
-const tmpDir = path.join(__dirname, TMP_DIR)
+const tmpDir = path.join(__dirname, '..', TMP_DIR)
+const cacheDir = path.join(process.cwd(), TMP_DIR)
 
  // set env vars for the tests
+process.env.F5_CONX_CORE_CACHE = cacheDir
 process.env.F5_CONX_CORE_TCP_TIMEOUT = "3000"
 process.env.F5_CONX_CORE_LOG_LEVEL = "debug"
 process.env.F5_CONX_CORE_LOG_BUFFER = "true"
@@ -27,11 +37,8 @@ require('./logger.unit.tests')
 // unit test external http functions
 require('./extHttp.unit.tests')
 
-// unit test iHealth client class (extends external https class)
-// require('./iHealth.unit.tests)
-
-// unit test atc ilx rpm mgmt (versions/download/upload/install/unInstall)
-require('./f5Client_atcMgmt.int.tests')
+// // // // // unit test iHealth client class (extends external https class)
+// // // // require('./iHealth.unit.tests')
 
 // unit test core mgmtClient failures
 require('./mgmtClient.failures.unit.test')
@@ -53,11 +60,20 @@ require('./f5Client_ipv6.int.tests')
 // ucs sub-class tests 
 require('./f5Client_ucs.int.tests')
 
-// ucs sub-class tests 
+// qkview sub-class tests 
 require('./f5Client_qkview.int.tests')
 
+
+
+// ###############################
+// unit test atc ilx rpm mgmt (versions/download/upload/install/unInstall)
+require('./f5Client_atcMgmt.int.tests')
+// ###############################
+
+
+
 // AS3 class tests
-require('./as3Client.unit.tests')
+require('./as3Client.int.tests')
 
 // // fast class tests
 // require('./fastClient.unit.tests')

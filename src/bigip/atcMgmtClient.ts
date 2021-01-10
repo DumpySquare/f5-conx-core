@@ -8,57 +8,94 @@
 
 'use strict';
 
+import path from "path";
+import fs from 'fs';
+
 import { HttpResponse } from "../utils/httpModels";
-import { AtcMetaData } from "./bigipModels";
 import { MgmtClient } from "./mgmtClient";
 import { ExtHttp } from '../externalHttps';
-import { TMP_DIR, AtcGitReleases, iControlEndpoints } from '../constants'
+import { iControlEndpoints, F5UploadPaths } from '../constants'
 
 
+/**
+ * class for managing Automated Tool Chain services
+ *  - install/unInstall
+ *  - including download from web and upload to f5)
+ *  - will cache files locally to minimize downloads)
+ *  - installed services and available versions should be handled at the f5Client level (through discover function and metadata client)
+ * 
+ * @param mgmtClient connected device mgmt client
+ * @param extHttp client for external connectivity
+ * 
+ */
 export class AtcMgmtClient {
     public readonly mgmtClient: MgmtClient;
-    public readonly metaData: AtcMetaData;
     public readonly extHttp: ExtHttp;
 
-
-    //#############################################################
-    //  ###  the following is just used for reference - metaData should be passed in at instantiation
-    // public readonly PKG_MGMT_URI: '/mgmt/shared/iapp/package-management-tasks'
-    // public publicMetaData = 'https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json';
-    // FAST_GIT_RELEASES = 'https://api.github.com/repos/F5Networks/f5-appsvcs-templates/releases';
-    // AS3_GIT_RELEASES = 'https://api.github.com/repos/F5Networks/f5-appsvcs-extension/releases';
-    // DO_GIT_RELEASES = 'https://api.github.com/repos/F5Networks/f5-declarative-onboarding/releases';
-    // TS_GIT_RELEASES = 'https://api.github.com/repos/F5Networks/f5-telemetry-streaming/releases';
-
     constructor(
-
-        metaData: AtcMetaData,
         mgmtClient: MgmtClient,
         extHttp: ExtHttp
     ) {
-        this.metaData = metaData;
         this.mgmtClient = mgmtClient;
         this.extHttp = extHttp;
     }
 
+
     /**
-     * functions:
+     * download file from external web location
+     * - should be rpm files and rsa signatures
      * 
-     * - list available versions
-     * - upload/download atc ilx rpm
-     * - install/uninstall atc ilx rpm
-     *   - list installed packages
+     * @param url ex.
+     * `https://github.com/F5Networks/f5-appsvcs-templates/releases/download/v1.4.0/f5-appsvcs-templates-1.4.0-1.noarch.rpm`
      */
+    async download(url: string): Promise<HttpResponse|{data: { file: string, bytes: number}}> {
 
+        this.mgmtClient.events.emit('log-info', {
+            msg: 'downloading rpm from web',
+            url
+        })
+        
+        // extract path from URL
+        const urlPath = new URL(url).pathname
+        
+        const fileName = path.basename(urlPath);
+        
+        const localFilePath = path.join(this.extHttp.cacheDir, fileName)
+        
+        const existing = fs.existsSync(localFilePath)
+        
+        if(existing) {
+            // file was found in cache
+            const fileStat = fs.statSync(localFilePath);
+            
+            const resp = { data: {
+                file: localFilePath,
+                cache: true,
+                bytes: fileStat.size
+            }};
 
+            this.mgmtClient.events.emit('log-info', {
+                msg: 'found local cached rpm',
+                file: resp.data
+            })
 
-    async downloadRpmFromWeb(url: string, filename: string): Promise<HttpResponse> {
+            return resp;
 
-        return await this.extHttp.download(url, filename, './f5_cache')
-
+        } else {
+            // file not found in cache, download
+            return await this.extHttp.download(url)
+        }
+        
     }
 
 
+    /**
+     * upload rpm to f5
+     * FILE
+     *  - uri: '/mgmt/shared/file-transfer/uploads'
+     *  - path: '/var/config/rest/downloads'
+     * @param rpm `full local path + file name`
+     */
     async uploadRpm(rpm: string): Promise<HttpResponse> {
 
         return await this.mgmtClient.upload(rpm, 'FILE')
@@ -66,18 +103,31 @@ export class AtcMgmtClient {
     }
 
 
+    /**
+     * install rpm on F5 (must be uploaded first)
+     * @param rpmName 
+     */
     async install(rpmName: string): Promise<HttpResponse> {
 
         return await this.mgmtClient.makeRequest(iControlEndpoints.atcPackageMgmt, {
             method: 'POST',
             data: {
                 operation: 'INSTALL',
-                packageFilePath: `/var/config/rest/downloads/${rpmName}`
+                packageFilePath: `${F5UploadPaths.file.path}/${rpmName}`
             }
         })
             .then(async resp => {
-                return await this.mgmtClient.followAsync(`${iControlEndpoints.atcPackageMgmt}/${resp.data.id}`)
+                // this will follow the rpm install process till it completes, but we need to follow this with another async to wait till the service endpoints become available, which typically requires a service restart of restjavad/restnoded
+                const waitTillReady = await this.mgmtClient.followAsync(`${iControlEndpoints.atcPackageMgmt}/${resp.data.id}`)
 
+                await new Promise(resolve => { setTimeout(resolve, 1000); });
+
+                // figure out what atc service we installed, via rpmName?
+                // then poll that atc service endpoint (info) till it returns a version
+                // pust that information into the async array for end user visibility
+                // waitTillReady.async.push()
+
+                return waitTillReady;
             })
     }
 
@@ -99,6 +149,11 @@ export class AtcMgmtClient {
     }
 
 
+    /**
+     * uninstall atc/ilx/rpm package on f5
+     * @param packageName 
+     * ex. 'f5-appsvcs-templates-1.4.0-1.noarch'
+     */
     async unInstall(packageName: string): Promise<HttpResponse> {
 
         // todo: build async follower to start after job completion and watch for services to be available again
@@ -115,22 +170,32 @@ export class AtcMgmtClient {
             }
         })
             .then(async resp => {
-                const job = await this.mgmtClient.followAsync(`${iControlEndpoints.atcPackageMgmt}/${resp.data.id}`)
+                // for uninstall operations, this is just gonna have to work
+                const awaitServiceRestart: HttpResponse = await this.mgmtClient.followAsync(`${iControlEndpoints.atcPackageMgmt}/${resp.data.id}`)
+                await new Promise(resolve => { setTimeout(resolve, 5000); });
 
-                // await function to watch restnoded service restart
-                //  /mgmt/tm/sys/service/restnoded
-
-                // await this.watchAtcRestart();
-
-                return job;
+                // check if atc services restarted and append thier responses when complete
+                // awaitServiceRestart.async.push(await this.mgmtClient.followAsync('/mgmt/tm/sys/service/restnoded/stats'))
+                // awaitServiceRestart.async.push(await this.mgmtClient.followAsync('/mgmt/tm/sys/service/restjavad/stats'))
+                return awaitServiceRestart;
             })
     }
 
 
-    async watchAtcRestart(): Promise<HttpResponse> {
+    /**
+     * after the rpm install/unInstall job completes (which happens in seconds), the restnoded/restjavad services need to restart, which can take 20-30 seconds before the service is available for use
+     * 
+     * Having this function would allow that restart to be monitored so the UI can be refreshed and the service can start being used
+     * 
+     * to be called at the end of most of the functions above
+     */
+    async watchAtcRestart(): Promise<unknown> {
+
         const restnoded = await this.mgmtClient.followAsync('/mgmt/tm/sys/service/restnoded/stats')
         const restjavad = await this.mgmtClient.followAsync('/mgmt/tm/sys/service/restjavad/stats')
-        return;
+
+        // capture restart information and inject into calling function http response for visibility
+        return { restnoded, restjavad};
     }
 
 }

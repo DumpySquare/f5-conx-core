@@ -5,7 +5,7 @@ dist/
 # Coverage directory
 coverage/
 # Code documentation directory
-code_docs/
+# code_docs/
 # Test harness Files
 deployment_info.json
 # NYC output directory

@@ -56,6 +56,7 @@ describe('f5Client rpm mgmt integration tests', function () {
 
         f5Client = getF5Client({ ipv6: true });
 
+        // un-comment to allow testing to actualy f5 device
         // f5Client = new F5Client('192.168.200.131', 'admin', 'benrocks')
 
         f5Client.events.on('failedAuth', msg => events.push(msg));
@@ -64,17 +65,12 @@ describe('f5Client rpm mgmt integration tests', function () {
         f5Client.events.on('log-error', msg => events.push(msg));
 
         await f5Client.discover();
-
-        // nock.recorder.rec();
     });
 
     // runs once after the last test in this block
     after(function () {
         // clear login at the end of tests
         f5Client.clearLogin();
-
-        // const recording = nock.recorder.play()
-        // const x = recording;
     });
 
     beforeEach(async function () {
@@ -95,6 +91,114 @@ describe('f5Client rpm mgmt integration tests', function () {
     });
 
 
+
+
+    it('download package', async function () {
+        this.slow(200);
+
+        // These next two tests are focused on regular external download capability, this test just downloads a file from an external resource, the next test is the same test, but it should see that the file is already locally cached and return it
+
+        const nockScopeGit = nock(`https://test.io`)
+        const url = 'https://test.io/someDir/download/test/package1.rpm'
+        
+        const urlPath = new URL(url).pathname       // extract path from URL
+        const fileName = path.basename(urlPath);    // get file name from url
+        
+        nockScopeGit
+            .get(urlPath)
+            .replyWithFile(200, filePath)
+            
+        await f5Client.atc.download(url)
+            .then(resp => {
+
+                // get filename from downloaded location
+                const downloadedFileName = path.basename(resp.data.file)
+                assert.deepStrictEqual(downloadedFileName, fileName);
+                assert.ok(resp.data.bytes);
+
+            })
+            .catch(err => {
+                debugger;
+                return Promise.reject(err);
+            });
+    });
+
+
+    it('download package - again from local cache', async function () {
+        this.slow(200);
+        nock.cleanAll();    // clean all nocks since we won't be using them for this test
+
+        // this test plays off the previous test that should have downloaded a file, now this test should try to download the same file, see that it is already in the local cache and return it, instead of downloading a fresh copy
+
+        const url = 'https://test.io/someDir/download/test/package1.rpm'
+        // const url = 'https://github.com/F5Networks/f5-appsvcs-templates/releases/download/v1.4.0/f5-appsvcs-templates-1.4.0-1.noarch.rpm'
+
+        const urlPath = new URL(url).pathname       // extract path from URL
+        const fileName = path.basename(urlPath);    // get file name from url
+        await f5Client.atc.download(url)
+            .then(resp => {
+
+                // get filename from downloaded location
+                const downloadedFileName = path.basename(resp.data.file)
+                assert.deepStrictEqual(downloadedFileName, fileName);
+                assert.ok(resp.data.bytes > 100);   // does the file actually have size?
+                assert.ok(resp.data.cache);        // did we get the cached flag?
+
+                fs.unlinkSync(resp.data.file);
+            })
+            .catch(err => {
+                debugger;
+                return Promise.reject(err);
+            });
+    });
+
+    
+    it('download package - github redirect', async function () {
+        this.slow(200);
+
+        // this test is like the regurlar download, but from something like github that redirects the request to another caching service like AWS
+
+        // this test is necessary since it seems that the "timing" package added to this axios request library breaks the redirect.  
+        // Currently working through a solution.  
+        // Option 1: just remove the timings for entire external http class for now, since they are really required for anything.  
+        // Option 2: allow 302 and re-implement redirect following.  
+        // Option 3: create a unique single axios instance with all same tweaks, but without the timings, just for downloads
+
+        const nockScopeGit = nock(`https://github.com`)
+        const url = 'https://github.com/F5Networks/f5-appsvcs-templates/releases/download/v1.4.0/f5-appsvcs-templates-1.4.0-1.noarch.rpm'
+        
+        const urlPath = new URL(url).pathname       // extract path from URL
+        const fileName = path.basename(urlPath);    // get file name from url
+        
+        nockScopeGit
+            .get(urlPath)
+            .reply(302, undefined, [
+                'Status',
+                '302 Found',
+                'Location',
+                'https://github.com/otherFiles/newFile.pkg',
+            ])
+            .get('/otherFiles/newFile.pkg')
+            .replyWithFile(200, filePath)
+            
+        await f5Client.atc.download(url)
+            .then(resp => {
+
+                // get filename from downloaded location
+                const downloadedFileName = path.basename(resp.data.file)
+                assert.deepStrictEqual(downloadedFileName, fileName);
+                assert.ok(resp.data.bytes);
+                assert.ok(!resp.data.cache);
+
+                fs.unlinkSync(resp.data.file);
+            })
+            .catch(err => {
+                debugger;
+                return Promise.reject(err);
+            });
+
+    });
+    
 
 
     it('upload package', async function () {

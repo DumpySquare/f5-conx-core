@@ -27,6 +27,8 @@ import { AtcMgmtClient } from "./atcMgmtClient";
 
 import localAtcMetadata from './atc_metadata.json';
 import { ExtHttp } from '../externalHttps';
+import { TMP_DIR, atcMetaDataCloudUrl } from '../constants'
+import path from 'path';
 
 
 /**
@@ -49,13 +51,15 @@ import { ExtHttp } from '../externalHttps';
  * ```
 */
 export class F5Client {
-    protected _mgmtClient: MgmtClient;
+    mgmtClient: MgmtClient;
     // protected _metadataClient: MetadataClient;
-    protected _atcMetaData: AtcMetaData = localAtcMetadata;
+    atcMetaData: AtcMetaData;
+    cacheDir: string;
     host: F5InfoApi | undefined;
     atc: AtcMgmtClient;
     ucs: UcsClient;
     qkview: QkviewClient;
+    extHttp: ExtHttp;
     fast: FastClient | undefined;
     as3: As3Client | undefined;
     do: DoClient | undefined;
@@ -73,25 +77,33 @@ export class F5Client {
         },
         extHttp?: ExtHttp
     ) {
-        this._mgmtClient = new MgmtClient(
+        this.mgmtClient = new MgmtClient(
             host,
             user,
             password,
             hostOptions
         )
 
+        this.atcMetaData = localAtcMetadata;
+
+        this.cacheDir = process.env.F5_CONX_CORE_CACHE || path.join(process.cwd(), TMP_DIR);
+
         // get event emitter instance from mgmtClient
-        this.events = this._mgmtClient.getEvenEmitter();
+        this.events = this.mgmtClient.getEvenEmitter();
+
+        // setup external http class (feed it the events instance)
+        this.extHttp = extHttp ? extHttp : new ExtHttp({ 
+            eventEmitter: this.events,
+        });
 
         // setup ucsClient
-        this.ucs = new UcsClient(this._mgmtClient)
+        this.ucs = new UcsClient(this.mgmtClient)
 
         // setup qkviewClient
-        this.qkview = new QkviewClient(this._mgmtClient)
-
+        this.qkview = new QkviewClient(this.mgmtClient)
 
         // setup atc rpm ilx mgmt
-        this.atc = new AtcMgmtClient(this._atcMetaData, this._mgmtClient, extHttp)
+        this.atc = new AtcMgmtClient(this.mgmtClient, this.extHttp)
         
     }
 
@@ -102,7 +114,7 @@ export class F5Client {
      *  - mainly for unit tests...
      */
     async clearLogin(): Promise<number> {
-        return this._mgmtClient.clearToken();
+        return this.mgmtClient.clearToken();
     }
 
 
@@ -116,7 +128,7 @@ export class F5Client {
      * @returns request response
      */
     async https(uri: string, options?: F5HttpRequest): Promise<HttpResponse> {
-        return await this._mgmtClient.makeRequest(uri, options)
+        return await this.mgmtClient.makeRequest(uri, options)
     }
 
 
@@ -129,20 +141,33 @@ export class F5Client {
      */
     async discover(): Promise<void> {
 
+        // refresh atc meta data
+        this.refreshMetaData()
+        .then( resp => {
+            this.events.emit('log-info', 'Refreshing atc metadata from cloud')
+            this.atcMetaData = resp.data;
+        })
+        .catch( err => {
+            this.events.emit('log-info', {
+                msg: 'was NOT able to access internet to get latest atc metadata',
+                err
+            })
+        })
+
         // get device info
-        await this._mgmtClient.makeRequest('/mgmt/shared/identified-devices/config/device-info')
+        await this.mgmtClient.makeRequest('/mgmt/shared/identified-devices/config/device-info')
             .then(resp => {
 
                 // assign details to this and mgmtClient class
                 this.host = resp.data
-                this._mgmtClient.hostInfo = resp.data
+                this.mgmtClient.hostInfo = resp.data
             })
 
 
         // check FAST installed by getting verion info
-        await this._mgmtClient.makeRequest(this._atcMetaData.components.fast.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaData.components.fast.endpoints.info.uri)
             .then(resp => {
-                this.fast = new FastClient(resp.data as AtcInfo, this._atcMetaData.components.fast, this._mgmtClient);
+                this.fast = new FastClient(resp.data as AtcInfo, this.atcMetaData.components.fast, this.mgmtClient);
             })
             .catch(() => {
                 // do nothing... but catch the error from bubbling up and causing other issues
@@ -150,11 +175,11 @@ export class F5Client {
             })
 
         // check AS3 installed by getting verion info
-        await this._mgmtClient.makeRequest(this._atcMetaData.components.as3.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaData.components.as3.endpoints.info.uri)
             .then(resp => {
                 // if http 2xx, create as3 client
                 // notice the recast of resp.data type of "unknown" to "AtcInfo"
-                this.as3 = new As3Client(resp.data as AtcInfo, this._atcMetaData.components.as3, this._mgmtClient);
+                this.as3 = new As3Client(resp.data as AtcInfo, this.mgmtClient);
             })
             .catch(() => {
                 // do nothing... but catch the error from bubbling up and causing other issues
@@ -163,9 +188,9 @@ export class F5Client {
 
 
         // check DO installed by getting verion info
-        await this._mgmtClient.makeRequest(this._atcMetaData.components.do.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaData.components.do.endpoints.info.uri)
             .then(resp => {
-                this.do = new DoClient(resp.data[0] as AtcInfo, this._atcMetaData.components.do, this._mgmtClient);
+                this.do = new DoClient(resp.data[0] as AtcInfo, this.atcMetaData.components.do, this.mgmtClient);
             })
             .catch(() => {
                 // do nothing... but catch the error from bubbling up and causing other issues
@@ -174,9 +199,9 @@ export class F5Client {
 
 
         // check TS installed by getting verion info
-        await this._mgmtClient.makeRequest(this._atcMetaData.components.ts.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaData.components.ts.endpoints.info.uri)
             .then(resp => {
-                this.ts = new TsClient(resp.data as AtcInfo, this._atcMetaData.components.ts, this._mgmtClient);
+                this.ts = new TsClient(resp.data as AtcInfo, this.atcMetaData.components.ts, this.mgmtClient);
             })
             .catch(() => {
                 // do nothing... but catch the error from bubbling up and causing other issues
@@ -185,9 +210,9 @@ export class F5Client {
 
 
         // check CF installed by getting verion info
-        await this._mgmtClient.makeRequest(this._atcMetaData.components.cf.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaData.components.cf.endpoints.info.uri)
             .then(resp => {
-                this.cf = new CfClient(resp.data as AtcInfo, this._atcMetaData.components.cf, this._mgmtClient);
+                this.cf = new CfClient(resp.data as AtcInfo, this.atcMetaData.components.cf, this.mgmtClient);
             })
             .catch(() => {
                 // do nothing... but catch the error from bubbling up and causing other issues
@@ -215,7 +240,7 @@ export class F5Client {
      * @param uploadType
      */
     async upload(localSourcePathFilename: string, uploadType: F5Upload): Promise<HttpResponse> {
-        return this._mgmtClient.upload(localSourcePathFilename, uploadType)
+        return this.mgmtClient.upload(localSourcePathFilename, uploadType)
     }
 
 
@@ -236,7 +261,7 @@ export class F5Client {
      * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
      */
     async download(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<HttpResponse> {
-        return this._mgmtClient.download(fileName, localDestPath, downloadType)
+        return this.mgmtClient.download(fileName, localDestPath, downloadType)
     }
 
 
@@ -244,27 +269,16 @@ export class F5Client {
 
 
 
-    // /**
-    //  * install specified ilx-rpm
-    //  *  - need to discuss workflow
-    //  *  - should this just install an rpm already uploaded?
-    //  *  - or should this also fetch/upload the requested rpm?
-    //  */
-    // async installRPM(rpmName: string): Promise<HttpResponse> {
-
-    //     return;
-    // }
 
 
 
-    // /**
-    //  * refresh/get latest ATC metadata from 
-    //  * *** not implemented yet ***
-    //  * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
-    //  * todo: refresh this file with every packages release via git actions or package.json script
-    //  */
-    // async refreshMetaData(): Promise<void> {
-
-    //     return;
-    // }
+    /**
+     * refresh/get latest ATC metadata from cloud
+     * 
+     * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
+     * todo: refresh this file with every packages release via git actions or package.json script
+     */
+    async refreshMetaData(): Promise<HttpResponse> {
+        return await this.extHttp.makeRequest({ url: atcMetaDataCloudUrl })
+    }
 }

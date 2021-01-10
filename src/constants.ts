@@ -8,8 +8,18 @@
 
 'use strict';
 
+/**
+ * global file cache directory for:
+ *  - TMOS IOS (+ signature files)
+ *  - ATC ILX RPMs (+ signature files)
+ *  - ...
+ */
 export const TMP_DIR = '/f5_cache';
 
+/**
+ * url for ATC metadata in the cloud
+ */
+export const atcMetaDataCloudUrl = 'https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json'
 
 /**
  * Common iControl/tmos api endpoints
@@ -27,11 +37,58 @@ export const iControlEndpoints = {
 }
 
 
-export const AtcGitReleases = {
-    fast: 'https://api.github.com/repos/F5Networks/f5-appsvcs-templates/releases',
-    as3: 'https://api.github.com/repos/F5Networks/f5-appsvcs-extension/releases',
-    do: 'https://api.github.com/repos/F5Networks/f5-declarative-onboarding/releases',
-    ts: 'https://api.github.com/repos/F5Networks/f5-telemetry-streaming/releases',
+/**
+ * atc metadata for endpoints, download and web urls
+ */
+export const atcMetaData = {
+    fast: {
+        endPoints: {
+            declare: '/mgmt/shared/fast/applications',
+            templateSets: '/mgmt/shared/fast/templatesets',
+            templates: '/mgmt/shared/fast/templates',
+            tasks: '/mgmt/shared/fast/tasks',
+            info: '/mgmt/shared/fast/info'
+        },
+        gitReleases: 'https://api.github.com/repos/F5Networks/f5-appsvcs-templates/releases',
+        repo: 'https://github.com/F5Networks/f5-appsvcs-templates'
+    },
+    as3: {
+        endPoints: {
+            declare: '/mgmt/shared/appsvcs/declare',
+            tasks: '/mgmt/shared/appsvcs/task',
+            info: '/mgmt/shared/appsvcs/info'
+        },
+        gitReleases: 'https://api.github.com/repos/F5Networks/f5-appsvcs-extension/releases',
+        repo: 'https://github.com/F5Networks/f5-appsvcs-extension'
+    },
+    do: {
+        endPoints: {
+            declare: '/mgmt/shared/declarative-onboarding',
+            info: '/mgmt/shared/declarative-onboarding/info',
+            inspect: '/mgmt/shared/declarative-onboarding/inspect'
+        },
+        gitReleases: 'https://api.github.com/repos/F5Networks/f5-declarative-onboarding/releases',
+        repo: 'https://github.com/F5Networks/f5-declarative-onboarding'
+    },
+    ts: {
+        endPoints: {
+            declare: '/mgmt/shared/telemetry/declare',
+            info: '/mgmt/shared/telemetry/info',
+        },
+        gitReleases: 'https://api.github.com/repos/F5Networks/f5-telemetry-streaming/releases',
+        repo: 'https://github.com/F5Networks/f5-telemetry-streaming/'
+    },
+    cf: {
+        endPoints: {
+            declare: '/mgmt/shared/cloud-failover/declare',
+            info: '/mgmt/shared/cloud-failover/info',
+            inspect: '/mgmt/shared/cloud-failover/inspect',
+            trigger: '/mgmt/shared/cloud-failover/trigger',
+            reset: '/mgmt/shared/cloud-failover/reset'
+        },
+        gitReleases: 'https://api.github.com/repos/F5Networks/f5-cloud-failover-extension/releases',
+        repo: 'https://github.com/F5Networks/f5-cloud-failover-extension/'
+    }
 }
 
 /**

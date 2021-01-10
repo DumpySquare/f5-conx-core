@@ -13,8 +13,9 @@
 
 import { HttpResponse } from "../utils/httpModels";
 import { isObject } from "../utils/misc";
-import { As3Dec, As3MetaData, AtcInfo } from "./bigipModels";
+import { As3Dec, AtcInfo } from "./bigipModels";
 import { MgmtClient } from "./mgmtClient";
+import { atcMetaData } from '../constants';
 
 
 /**
@@ -22,10 +23,9 @@ import { MgmtClient } from "./mgmtClient";
  */
 export class As3Client {
     public readonly mgmtClient: MgmtClient;
-    public readonly metaData: As3MetaData;
     // the followin endpoints should be tied back into the metadata so it can be dynamic with versions
-    public readonly taskEndpoint = `/mgmt/shared/appsvcs/task`
-    public readonly declareEndpoint = `/mgmt/shared/appsvcs/declare`
+    // public readonly taskEndpoint = `/mgmt/shared/appsvcs/task`
+    // public readonly declareEndpoint = `/mgmt/shared/appsvcs/declare`
     /**
      * AS3 service version information
      */
@@ -53,11 +53,9 @@ export class As3Client {
 
     constructor(
         versions: AtcInfo,
-        metaData: As3MetaData,
         mgmtClient: MgmtClient
     ) {
         this.version = versions;
-        this.metaData = metaData;
         this.mgmtClient = mgmtClient;
     }
 
@@ -69,8 +67,8 @@ export class As3Client {
     async getTasks(id?: string): Promise<HttpResponse> {
 
         const url =
-            id ? `${this.taskEndpoint}/${id}`
-                : this.taskEndpoint;
+            id ? `${atcMetaData.as3.endPoints.tasks}/${id}`
+                : atcMetaData.as3.endPoints.tasks;
 
         return await this.mgmtClient.makeRequest(url)
     }
@@ -102,7 +100,7 @@ export class As3Client {
                 ? `${str}?${params.join('&')}`
                 : str;
 
-        return await this.mgmtClient.makeRequest(`${this.declareEndpoint}${str}`)
+        return await this.mgmtClient.makeRequest(`${atcMetaData.as3.endPoints.declare}${str}`)
     }
 
 
@@ -113,14 +111,14 @@ export class As3Client {
      */
     async postDec(data: unknown): Promise<HttpResponse> {
 
-        const uri = [this.declareEndpoint, '?async=true']
+        const uri = [atcMetaData.as3.endPoints.declare, '?async=true']
         return await this.mgmtClient.makeRequest(uri.join(''), {
             method: 'POST',
             data
         })
             .then(async resp => {
 
-                const asyncUrl = `${this.taskEndpoint}/${resp.data.id}`
+                const asyncUrl = `${atcMetaData.as3.endPoints.tasks}/${resp.data.id}`
                 return await this.mgmtClient.followAsync(asyncUrl);
             })
     }
@@ -170,7 +168,7 @@ export class As3Client {
         }
 
         // while the "DELETE" http method is waaay easier, this method works for all situations, including bigiq multi-target/tenant
-        return await this.mgmtClient.makeRequest(this.declareEndpoint, {
+        return await this.mgmtClient.makeRequest(atcMetaData.as3.endPoints.declare, {
             method: 'POST',
             data: x
         })

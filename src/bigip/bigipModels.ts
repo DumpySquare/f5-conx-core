@@ -18,6 +18,21 @@ export type AuthTokenReqBody = {
     loginProviderName: string
 }
 
+/**
+ * github releases response structure (condensed)
+ */
+export type AtcRelease = {
+    version: string,
+    id: number,
+    // latest?: boolean,
+    assets: [{
+        id: string,
+        name: string,
+        size: number,
+        browser_download_url: string
+    }]
+
+}
 
 /**
  * types of F5 file download locations

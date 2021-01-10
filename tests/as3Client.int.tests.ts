@@ -17,7 +17,7 @@ import path from 'path';
 import { getF5Client, ipv6Host } from '../src/utils/testingUtils';
 import { getFakeToken } from '../src/utils/testingUtils';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
-import {  iControlEndpoints } from '../src/constants';
+import {  atcMetaData, iControlEndpoints } from '../src/constants';
 import { F5Client } from '../src/bigip/f5Client';
 import { as3InfoApiReponse, deviceInfoIPv6 } from './artifacts/f5_device_atc_infos';
 import localAtcMetadata from '../src/bigip/atc_metadata.json';
@@ -150,7 +150,8 @@ describe('as3Client integration tests', function () {
     it('get all tasks', async function () {
 
         nockInst
-            .get(f5Client.as3.taskEndpoint)
+            .get(atcMetaData.as3.endPoints.tasks)
+            // .get(f5Client.as3.taskEndpoint)
             .reply(200, as3Tasks)
 
         const resp = await f5Client.as3.getTasks();
@@ -165,7 +166,7 @@ describe('as3Client integration tests', function () {
     it('get single task', async function () {
 
         nockInst
-            .get(`${f5Client.as3.taskEndpoint}/${taskId}`)
+            .get(`${atcMetaData.as3.endPoints.tasks}/${taskId}`)
             .reply(200,
                 {
                     id: '1111',
@@ -265,7 +266,7 @@ describe('as3Client integration tests', function () {
     it('get all tenants/declarations', async function () {
 
         nockInst
-            .get(f5Client.as3.declareEndpoint)
+            .get(atcMetaData.as3.endPoints.declare)
             .reply(200,
                 {
                     id: '1111',
@@ -299,7 +300,7 @@ describe('as3Client integration tests', function () {
     it('get single tenant declaration', async function () {
 
         nockInst
-            .get(`${f5Client.as3.declareEndpoint}/${tenant}`)
+            .get(`${atcMetaData.as3.endPoints.declare}/${tenant}`)
             .reply(200,
                 {
                     id: '1111',
@@ -322,7 +323,7 @@ describe('as3Client integration tests', function () {
     it('get single tenant declaration - expanded param', async function () {
 
         nockInst
-            .get(`${f5Client.as3.declareEndpoint}/${tenant}?show=expanded`)
+            .get(`${atcMetaData.as3.endPoints.declare}/${tenant}?show=expanded`)
             .reply(200,
                 {
                     id: '1111',

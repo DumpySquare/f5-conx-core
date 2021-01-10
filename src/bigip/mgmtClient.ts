@@ -266,7 +266,7 @@ export class MgmtClient {
                         baseURL: resp.config.baseURL,
                         url: resp.config.url,
                         method: resp.request.method,
-                        headers: resp.request.headers,
+                        headers: resp.config.headers,
                         protocol: resp.config.httpsAgent.protocol,
                         timings: resp.request.timings
                     }

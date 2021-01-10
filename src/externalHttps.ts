@@ -18,6 +18,7 @@ import timer from '@szmarczak/http-timer/dist/source';
 
 import { HttpResponse, uuidAxiosRequestConfig, AxiosResponseWithTimings } from "./utils/httpModels";
 import { getRandomUUID } from './utils/misc';
+import { TMP_DIR } from './constants';
 
 /**
  * Used to inject http call timers
@@ -39,17 +40,31 @@ interface extRegCfg extends uuidAxiosRequestConfig {
 }
 
 
+/**
+ * Class for making all external HTTP calls
+ * @constructor options.rejectUnauthorized - set to false to allow self-signed certs (default true)
+ */
 export class ExtHttp {
-    readonly userAgent: string;
+    userAgent: string;
     events: EventEmitter;
     private axios: AxiosInstance;
+    cacheDir: string;
     constructor(options?: {
         rejectUnauthorized?: boolean,
         eventEmitter?: EventEmitter
     }) {
         this.events = options?.eventEmitter ? options.eventEmitter : new EventEmitter;
         delete options?.eventEmitter    // delete eventEmitter from object before was pass to axios
+        
+        // set cache directory
+        this.cacheDir = process.env.F5_CONX_CORE_CACHE || path.join(process.cwd(), TMP_DIR);
+        
+        // set the user-agent, required for github connections
+        this.userAgent = process.env.F5_CONX_CORE_EXT_HTTP_AGENT || 'F5 Conx Core';
+
         this.axios = this.createAxiosInstance(options);
+
+        // todo: setup proxy details, probably capture from env's
     }
 
 
@@ -60,25 +75,29 @@ export class ExtHttp {
      */
     private createAxiosInstance(reqBase: extRegCfg = {}): AxiosInstance {
 
-        // reqBase = reqBase ? reqBase : {}
-
+        // #####################################
+        // Request timings are disabled for external resolution.  There was a corner case where they are breaking the download function with github and redirects.  
         // add request timinings
-        reqBase.transport = transport;
-
+        // reqBase.transport = transport;
+        // #####################################
 
         // add option to allow self-signed cert
-        if (reqBase?.rejectUnauthorized) {
+        if (reqBase?.rejectUnauthorized === false) {
             // add agent option
             reqBase.httpsAgent = new https.Agent({ rejectUnauthorized: false });
         }
-
+        
         // remove param
         delete reqBase?.rejectUnauthorized
+        
+        // // open up the allowed responses to include redirects.
+        // reqBase.validateStatus = function (status) {
+        //     return status >= 200 && status <= 302;
+        // }
 
-        // set the user-agent, required for github connections
-        const userAgent = process.env.F5_CONX_CORE_EXT_HTTP_AGENT || 'F5 Conx Core';
+        // set user agent
         reqBase.headers = {
-            'User-Agent': userAgent
+            'User-Agent': this.userAgent
         }
 
 
@@ -114,6 +133,8 @@ export class ExtHttp {
 
             events.emit('log-info', `EXTERNAL-HTTPS-RESP [${resp.config.uuid}]: ${resp.status} - ${resp.statusText}`);
 
+
+
             return resp;
         }, function (err) {
             // Any status codes that falls outside the range of 2xx cause this function to trigger
@@ -136,12 +157,7 @@ export class ExtHttp {
      */
     async makeRequest(options: uuidAxiosRequestConfig): Promise<HttpResponse> {
 
-        // options.url = url ? url : options.url;
-
         const baseURL = new URL(options.url)
-
-        // const base = baseURL.
-
 
         return await this.axios(options)
             .then((resp: AxiosResponseWithTimings) => {
@@ -157,7 +173,7 @@ export class ExtHttp {
                         baseURL: baseURL.origin,
                         url: baseURL.pathname,
                         method: resp.request.method,
-                        headers: resp.request.headers,
+                        headers: resp.config.headers,
                         protocol: baseURL.protocol,
                         timings: resp.request.timings
                     }
@@ -184,7 +200,7 @@ export class ExtHttp {
                             baseURL: err.response.config.baseURL,
                             url: err.response.config.url,
                             method: err.request.method,
-                            headers: err.request.headers,
+                            headers: err.response.config.headers,
                             protocol: err.response.config.httpsAgent.protocol,
                             timings: err.request.timings
                         }
@@ -229,14 +245,28 @@ export class ExtHttp {
 
 
 
+    /**
+     * download file from external (not f5)
+     * @param url fully qualified URL
+     * @param fileName (optional) destination file name - if you want it different than url
+     * @param destPath (optional) where to put the file (default is local project cache folder)
+     * @param options axios requestion options
+     */
+    async download(url: string, fileName?: string, destPath?: string, options: uuidAxiosRequestConfig = {}): Promise<HttpResponse> {
 
-    async download(url: string, fileName: string, destPath: string, options: uuidAxiosRequestConfig = {}): Promise<HttpResponse> {
+        // extract path from URL
+        const urlPath = new URL(url).pathname
 
+        // extract file name from url path
+        fileName = fileName ? fileName : path.basename(urlPath);
+        
         // set the response type for file download
         options['responseType'] = 'stream';
 
         // move url into options object
         options.url = url;
+
+        destPath = destPath ? destPath : this.cacheDir
 
         this.events.emit('log-debug', {
             message: 'pending external download',
@@ -251,7 +281,6 @@ export class ExtHttp {
             this.makeRequest(options)
                 .then(resp => {
                     resp.data.pipe(writable)
-                        // .on('finish', resolve)
                         .on('finish', () => {
 
                             // over-write response data
@@ -278,7 +307,11 @@ export class ExtHttp {
 
 
 
-
+    /**
+     * 
+     * @param url 
+     * @param localSourcePathFilename 
+     */
     async upload(url: string, localSourcePathFilename: string): Promise<HttpResponse> {
 
 
