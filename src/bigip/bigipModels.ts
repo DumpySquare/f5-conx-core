@@ -34,6 +34,33 @@ export type AtcRelease = {
 
 }
 
+export type GitRelease = {
+    tag_name: string,
+    id: number,
+    assets: Asset[]
+};
+
+export type Asset = {
+    name: string,
+    id: number,
+    size: number,
+    browser_download_url: string
+};
+
+export type AtcVersion = {
+    releases?: AtcRelease[];
+    latest?: string;
+};
+
+export type AtcVersions = {
+    lastCheckDate?: Date;
+    fast?: AtcVersion;
+    as3?: AtcVersion;
+    do?: AtcVersion;
+    ts?: AtcVersion;
+    cf?: AtcVersion;
+}
+
 /**
  * types of F5 file download locations
  * - UCS

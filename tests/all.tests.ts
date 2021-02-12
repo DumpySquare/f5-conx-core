@@ -26,7 +26,7 @@ const cacheDir = path.join(process.cwd(), TMP_DIR)
 
  // set env vars for the tests
 process.env.F5_CONX_CORE_CACHE = cacheDir
-process.env.F5_CONX_CORE_TCP_TIMEOUT = "3000"
+// process.env.F5_CONX_CORE_TCP_TIMEOUT = "3000"
 process.env.F5_CONX_CORE_LOG_LEVEL = "debug"
 process.env.F5_CONX_CORE_LOG_BUFFER = "true"
 process.env.F5_CONX_CORE_LOG_CONSOLE = "false"
@@ -36,6 +36,9 @@ require('./logger.unit.tests')
 
 // unit test external http functions
 require('./extHttp.unit.tests')
+
+// unit test get atc versions information
+require('./atcVersionsClient.unit.tests')
 
 // // // // // unit test iHealth client class (extends external https class)
 // // // // require('./iHealth.unit.tests')

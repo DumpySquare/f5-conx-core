@@ -25,7 +25,7 @@ import { TsClient } from "./tsClient";
 import { CfClient } from "./cfClient";
 import { AtcMgmtClient } from "./atcMgmtClient";
 
-import localAtcMetadata from './atc_metadata.json';
+import localAtcMetadata from './atc_metadata.old.json';
 import { ExtHttp } from '../externalHttps';
 import { TMP_DIR, atcMetaDataCloudUrl } from '../constants'
 import path from 'path';

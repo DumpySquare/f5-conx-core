@@ -55,10 +55,10 @@ export class ExtHttp {
     }) {
         this.events = options?.eventEmitter ? options.eventEmitter : new EventEmitter;
         delete options?.eventEmitter    // delete eventEmitter from object before was pass to axios
-        
+
         // set cache directory
         this.cacheDir = process.env.F5_CONX_CORE_CACHE || path.join(process.cwd(), TMP_DIR);
-        
+
         // set the user-agent, required for github connections
         this.userAgent = process.env.F5_CONX_CORE_EXT_HTTP_AGENT || 'F5 Conx Core';
 
@@ -68,7 +68,7 @@ export class ExtHttp {
     }
 
 
-        
+
     /**
      * core external axios instance
      * @param reqBase 
@@ -86,10 +86,10 @@ export class ExtHttp {
             // add agent option
             reqBase.httpsAgent = new https.Agent({ rejectUnauthorized: false });
         }
-        
+
         // remove param
         delete reqBase?.rejectUnauthorized
-        
+
         // // open up the allowed responses to include redirects.
         // reqBase.validateStatus = function (status) {
         //     return status >= 200 && status <= 302;
@@ -144,9 +144,9 @@ export class ExtHttp {
         });
         return axInstance;
     }
-    
 
-    
+
+
     /**
      * Make External HTTP request
      * 
@@ -159,7 +159,7 @@ export class ExtHttp {
 
         const baseURL = new URL(options.url)
 
-        return await this.axios(options)
+        const resp = await this.axios.request(options)
             .then((resp: AxiosResponseWithTimings) => {
 
                 // only return the things we need
@@ -240,6 +240,8 @@ export class ExtHttp {
                 // })
 
             })
+
+        return resp;
     }
 
 
@@ -259,7 +261,7 @@ export class ExtHttp {
 
         // extract file name from url path
         fileName = fileName ? fileName : path.basename(urlPath);
-        
+
         // set the response type for file download
         options['responseType'] = 'stream';
 
