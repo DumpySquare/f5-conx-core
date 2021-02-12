@@ -12,12 +12,13 @@
  * global file cache directory for:
  *  - TMOS IOS (+ signature files)
  *  - ATC ILX RPMs (+ signature files)
+ *  - ATC releases information/metadata
  *  - ...
  */
 export const TMP_DIR = '/f5_cache';
 
 /**
- * url for ATC metadata in the cloud
+ * url for ATC metadata in the cloud, this is only used by f5-sdk-js and only here for reference
  */
 export const atcMetaDataCloudUrl = 'https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json'
 
@@ -38,7 +39,7 @@ export const iControlEndpoints = {
 
 
 /**
- * atc metadata for endpoints, download and web urls
+ * NEW atc metadata for endpoints, download and web urls
  */
 export const atcMetaData = {
     fast: {

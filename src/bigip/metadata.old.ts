@@ -12,12 +12,15 @@
 // import assert from 'assert';
 import * as extHttp from '../utils/extHttp';
 
-import localExtensionMetadata from './atc_metadata.json';
+import localExtensionMetadata from './atc_metadata.old.json';
 
 const EXTENSION_METADATA = {
     url: 'https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json'
 };
 
+/**
+ * this is the original f5-sdk-js atc meta data client
+ */
 export class MetadataClient {
     protected _component: string;
     protected _componentVersion: string;

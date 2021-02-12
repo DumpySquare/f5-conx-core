@@ -29,7 +29,7 @@ import {
     ipv6Host 
 } from '../src/utils/testingUtils';
 import { getFakeToken } from '../src/utils/testingUtils';
-import localAtcMetadata from '../src/bigip/atc_metadata.json';
+import localAtcMetadata from '../src/bigip/atc_metadata.old.json';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 import { F5DownloadPaths, F5UploadPaths } from '../src/constants';
 

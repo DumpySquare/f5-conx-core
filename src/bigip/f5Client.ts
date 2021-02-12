@@ -11,7 +11,7 @@
 
 import { EventEmitter } from 'events';
 
-import { AtcMetaData, AtcInfo, F5InfoApi, F5DownLoad, F5Upload } from "./bigipModels";
+import { AtcInfo, F5InfoApi, F5DownLoad, F5Upload } from "./bigipModels";
 import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
 // import { MetadataClient } from "./metadata";
 
@@ -25,9 +25,9 @@ import { TsClient } from "./tsClient";
 import { CfClient } from "./cfClient";
 import { AtcMgmtClient } from "./atcMgmtClient";
 
-import localAtcMetadata from './atc_metadata.json';
+import localAtcMetadataSdk from './atc_metadata.old.json';
 import { ExtHttp } from '../externalHttps';
-import { TMP_DIR, atcMetaDataCloudUrl } from '../constants'
+import { TMP_DIR, atcMetaDataCloudUrl, atcMetaData as atcMetaDataNew } from '../constants'
 import path from 'path';
 
 
@@ -51,9 +51,10 @@ import path from 'path';
  * ```
 */
 export class F5Client {
-    mgmtClient: MgmtClient;
+    protected mgmtClient: MgmtClient;
     // protected _metadataClient: MetadataClient;
-    atcMetaData: AtcMetaData;
+    atcMetaDataSdk = localAtcMetadataSdk;
+    atcMetaData = atcMetaDataNew;
     cacheDir: string;
     host: F5InfoApi | undefined;
     atc: AtcMgmtClient;
@@ -83,8 +84,6 @@ export class F5Client {
             password,
             hostOptions
         )
-
-        this.atcMetaData = localAtcMetadata;
 
         this.cacheDir = process.env.F5_CONX_CORE_CACHE || path.join(process.cwd(), TMP_DIR);
 
@@ -141,18 +140,18 @@ export class F5Client {
      */
     async discover(): Promise<void> {
 
-        // refresh atc meta data
-        this.refreshMetaData()
-        .then( resp => {
-            this.events.emit('log-info', 'Refreshing atc metadata from cloud')
-            this.atcMetaData = resp.data;
-        })
-        .catch( err => {
-            this.events.emit('log-info', {
-                msg: 'was NOT able to access internet to get latest atc metadata',
-                err
-            })
-        })
+        // // refresh atc meta data
+        // this.refreshMetaData()
+        // .then( resp => {
+        //     this.events.emit('log-info', 'Refreshing atc metadata from cloud')
+        //     this.atcMetaData = resp.data;
+        // })
+        // .catch( err => {
+        //     this.events.emit('log-info', {
+        //         msg: 'was NOT able to access internet to get latest atc metadata',
+        //         err
+        //     })
+        // })
 
         // get device info
         await this.mgmtClient.makeRequest('/mgmt/shared/identified-devices/config/device-info')
@@ -165,9 +164,9 @@ export class F5Client {
 
 
         // check FAST installed by getting verion info
-        await this.mgmtClient.makeRequest(this.atcMetaData.components.fast.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaDataSdk.components.fast.endpoints.info.uri)
             .then(resp => {
-                this.fast = new FastClient(resp.data as AtcInfo, this.atcMetaData.components.fast, this.mgmtClient);
+                this.fast = new FastClient(resp.data as AtcInfo, this.atcMetaDataSdk.components.fast, this.mgmtClient);
             })
             .catch(() => {
                 // do nothing... but catch the error from bubbling up and causing other issues
@@ -175,7 +174,7 @@ export class F5Client {
             })
 
         // check AS3 installed by getting verion info
-        await this.mgmtClient.makeRequest(this.atcMetaData.components.as3.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaDataSdk.components.as3.endpoints.info.uri)
             .then(resp => {
                 // if http 2xx, create as3 client
                 // notice the recast of resp.data type of "unknown" to "AtcInfo"
@@ -188,9 +187,9 @@ export class F5Client {
 
 
         // check DO installed by getting verion info
-        await this.mgmtClient.makeRequest(this.atcMetaData.components.do.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaDataSdk.components.do.endpoints.info.uri)
             .then(resp => {
-                this.do = new DoClient(resp.data[0] as AtcInfo, this.atcMetaData.components.do, this.mgmtClient);
+                this.do = new DoClient(resp.data[0] as AtcInfo, this.atcMetaDataSdk.components.do, this.mgmtClient);
             })
             .catch(() => {
                 // do nothing... but catch the error from bubbling up and causing other issues
@@ -199,9 +198,9 @@ export class F5Client {
 
 
         // check TS installed by getting verion info
-        await this.mgmtClient.makeRequest(this.atcMetaData.components.ts.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaDataSdk.components.ts.endpoints.info.uri)
             .then(resp => {
-                this.ts = new TsClient(resp.data as AtcInfo, this.atcMetaData.components.ts, this.mgmtClient);
+                this.ts = new TsClient(resp.data as AtcInfo, this.atcMetaDataSdk.components.ts, this.mgmtClient);
             })
             .catch(() => {
                 // do nothing... but catch the error from bubbling up and causing other issues
@@ -210,9 +209,9 @@ export class F5Client {
 
 
         // check CF installed by getting verion info
-        await this.mgmtClient.makeRequest(this.atcMetaData.components.cf.endpoints.info.uri)
+        await this.mgmtClient.makeRequest(this.atcMetaDataSdk.components.cf.endpoints.info.uri)
             .then(resp => {
-                this.cf = new CfClient(resp.data as AtcInfo, this.atcMetaData.components.cf, this.mgmtClient);
+                this.cf = new CfClient(resp.data as AtcInfo, this.atcMetaDataSdk.components.cf, this.mgmtClient);
             })
             .catch(() => {
                 // do nothing... but catch the error from bubbling up and causing other issues
