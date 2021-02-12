@@ -12,30 +12,20 @@
 
 import assert from 'assert';
 import nock from 'nock';
-import fs from 'fs';
-import path from 'path';
-// import { F5UploadPaths, TMP_DIR } from '../src/constants'
 
-// import { F5Client } from '../src/bigip/f5Client';
-// import { getF5Client, ipv6Host } from '../src/utils/testingUtils';
-// import { getFakeToken } from '../src/utils/testingUtils';
-// import { AuthTokenReqBody } from '../src/bigip/bigipModels';
-
-// import { deviceInfoIPv6 } from './artifacts/f5_device_atc_infos';
 import { ExtHttp } from '../src/externalHttps';
 import { AtcVersionsClient } from '../src/bigip/atcVersionsClient'
 import Logger from "../src/logger";
 
-
-let nockScope: nock.Scope;
 const events = []
-let recorder;
 
 describe('f5Client atc metaData integration tests', function () {
 
-    it('atc versions', async function () {
+    // so this test suite accomplishes to things
+    // 1. test the freshing of atc versions cache information
+    // 2. save that information to the extension so end clients only need to refresh it, and will at least have some dated information if thier client is not able to reach the internet (which is rare, but a situation we have to think about).  So, this test refreshes that data that is included in the final releases
 
-        // nock.recorder.rec();
+    it('refresh atc versions', async function () {
 
         nock('https://api.github.com:443')
             .get('/repos/F5Networks/f5-appsvcs-templates/releases')
@@ -51,7 +41,6 @@ describe('f5Client atc metaData integration tests', function () {
 
         const extHttp = new ExtHttp();
         const logger = new Logger();
-
         const atcV = new AtcVersionsClient(extHttp, logger);
 
         await atcV.getAtcReleasesInfo()
@@ -64,23 +53,24 @@ describe('f5Client atc metaData integration tests', function () {
                 assert.ok(atcVersions.cf)
             })
             .catch(err => {
+                events.push(...atcV.logger.journal);
                 debugger;
             });
-
-        // const ret = atcReleases;
-
-        // recorder = nock.recorder.play();
-
-        debugger;
-
-
     });
 
-
+    // could probably create more tests to cover more code, like 
+    //  - what happens if the cache file is missing?
+    //      - testing the creation of the file
+    //  - what happens on the first check of the day?
+    //  - what happens on any subsequent checks of the day?
+    //  - what happens if an http request fails?
+    //  - what happens if the file is missing and the http requests fail?...
 
 
 });
 
+
+// below are all the http responses from each api call
 
 const fastResp = [
     {

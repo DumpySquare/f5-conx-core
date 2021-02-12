@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /*
  * Copyright 2020. F5 Networks, Inc. See End User License Agreement ("EULA") for
@@ -13,22 +12,19 @@
 import path from "path";
 import fs from 'fs';
 
-// import { HttpResponse } from "../utils/httpModels";
-import { Asset, AtcRelease, AtcVersion, AtcVersions, GitRelease } from "./bigipModels";
+import { Asset,  AtcVersions, GitRelease } from "./bigipModels";
 import { ExtHttp } from '../externalHttps';
 import { atcMetaData } from '../constants'
 import Logger from "../logger";
-import axios from "axios";
 
 
 /**
- * class for managing Automated Tool Chain services
- *  - install/unInstall
- *  - including download from web and upload to f5
- *  - will cache files locally to minimize downloads
- *  - installed services and available versions should be handled at the f5Client level (through discover function and metadata client)
+ * class for managing Automated Tool Chain services versions
+ * 
+ * Uses atc meta data to query each service public repo and get release information
  * 
  * @param extHttp client for external connectivity
+ * @param logger logger class for logging events within this class
  * 
  */
 export class AtcVersionsClient {
@@ -38,12 +34,26 @@ export class AtcVersionsClient {
      */
     extHttp: ExtHttp;
 
+    /**
+     * main logger client for logging events across the project
+     */
     logger: Logger;
 
+    /**
+     * ATC meta data including api endpoints, github releases url and main repo url
+     */
     atcMetaData = atcMetaData;
-    // checkDate;
-    atcMetaDataFileName = 'atcMetaData.json'
-    atcVersions: AtcVersions = {}
+    /**
+     * atc version cache name/location
+     * 
+     * '/home/someUser/f5-conx-core/src/bigip/atcMetaData.json'
+     */
+    atcVersionsFileName = path.join(__dirname, 'atcVersions.json');
+
+    /**
+     * object containing all the versions/releases/assets information for each ATC service
+     */
+    atcVersions: AtcVersions = {};
 
     constructor(
         extHttp: ExtHttp,
@@ -53,56 +63,59 @@ export class AtcVersionsClient {
         this.logger = logger;
     }
 
+
+    /**
+     * returns atc version information
+     * 
+     * will only query github to refresh once a day and saves details to file
+     */
     async getAtcReleasesInfo(): Promise<AtcVersions> {
         // load info from cache
         await this.loadReleaseInfoFromCache();
 
-        // if atcVersions has information and atcVersions.lastCheckDate is same day
-        // return this.atcVersions
-        // else
-        // this.refreshAtcReleaseInfo, then return it
-
-        const checkDate = this.atcVersions?.lastCheckDate?.getDate();
+        // if we have cache data, get date
+        const checkDate = new Date(this.atcVersions?.lastCheckDate).getDate();
+        // get todays date
         const todayDate = new Date().getDate();
 
+        // is it today?
         if (checkDate === todayDate) {
-            // was already checked/refreshed today, so pass info we already got
+            // was already checked/refreshed today, so pass cached info
+            this.logger.info('atc release version already checked today, returning cache');
             return this.atcVersions;
-            // return;
         } else {
-            // has not been checked today
-            return await this.refreshAtcReleasesInfo();
+            // has not been checked today, refresh
+            this.logger.info('atc release version has NOT been checked today, refreshing cache now');
+            await this.refreshAtcReleasesInfo();
+            return this.atcVersions;
         }
 
     }
 
 
-    async loadReleaseInfoFromCache(): Promise<any> {
-        // load release information from file
-        const filePath = path.join(this.extHttp.cacheDir, this.atcMetaDataFileName)
+    private async loadReleaseInfoFromCache(): Promise<void> {
 
-        // check tmp_dir for file
         try {
-            // load file, json.parse?
-            const versionFile = fs.readFileSync(filePath).toString();
+            // load atc versions cache
+            const versionFile = fs.readFileSync(this.atcVersionsFileName).toString();
             this.atcVersions = JSON.parse(versionFile);
         } catch (e) {
-            this.logger.error('no atc release version metadata found at', filePath);
+            this.logger.error('no atc release version metadata found at', this.atcVersionsFileName);
         }
     }
 
-    async saveReleaseInfoToCache(): Promise<any> {
-        // save atc release information to cache
-
-        const filePath = path.join(this.extHttp.cacheDir, this.atcMetaDataFileName)
-
+    /**
+     * save atc release/versions information to cache
+     */
+    private async saveReleaseInfoToCache(): Promise<void> {
+        
         try {
-            const saveedd = fs.writeFileSync(
-                path.join(this.extHttp.cacheDir, this.atcMetaDataFileName),
+            fs.writeFileSync(
+                this.atcVersionsFileName,
                 JSON.stringify(this.atcVersions, undefined, 4)
             );
         } catch (e) {
-            this.logger.error('not able to save atc versions info to ', filePath, e);
+            this.logger.error('not able to save atc versions info to ', this.atcVersionsFileName, e);
         }
     }
 
@@ -110,21 +123,24 @@ export class AtcVersionsClient {
      * loads all the release information for each ATC service
      * - this should be async to complete in the background once a day
      */
-    async refreshAtcReleasesInfo(): Promise<AtcVersions> {
+    private async refreshAtcReleasesInfo(): Promise<void> {
 
-        const atcTypes = Object.keys(this.atcMetaData);
-        atcTypes.forEach(async atc => {
+        // holds the promises from the axios request calls since the forEach loop is not async aware
+        // a request will be sent for each loop iteration, but all responses will be recieved in parallel
+        const promiseArray = []
+
+        Object.keys(this.atcMetaData).forEach(async atc => {
 
             // at launch of extension, load all the latest atc metadata
             const y = this.atcMetaData[atc].gitReleases;
-            await this.extHttp.makeRequest({ url: this.atcMetaData[atc].gitReleases })
-                .then(async resp => {
+            promiseArray.push(this.extHttp.makeRequest({ url: this.atcMetaData[atc].gitReleases })
+                .then( resp => {
                     // loop through reach release and build 
                     const latest: string[] = [];
-                    const releases = await resp.data.map(async (el: GitRelease) => {
+                    const releases = resp.data.map( (el: GitRelease) => {
 
                         // get filter/map out only the details we want for each asset
-                        const assets = await el.assets.map(async (asset: Asset) => {
+                        const assets = el.assets.map( (asset: Asset) => {
                             return {
                                 name: asset.name,
                                 id: asset.id,
@@ -137,7 +153,7 @@ export class AtcVersionsClient {
                         // const version = el.tag_name.replace(/v/, '');
                         const version = el.tag_name;
 
-                        await latest.push(version);
+                        latest.push(version);
                         return {
                             version,
                             id: el.id,
@@ -153,21 +169,25 @@ export class AtcVersionsClient {
 
 
                 }).catch(err => {
-                    debugger;
-                });
+                    this.logger.error({
+                        msg: `refreshAtcReleasesInfo, was not able to fetch release info for ${atc}`,
+                        url: this.atcMetaData[atc].gitReleases,
+                        resp: err 
+                    })
+                }));
+
 
 
         });
 
-        this.atcVersions.lastCheckDate = new Date();
-        const now = new Date();
-        const nowDate = now.getDate();
-        const yesterday = now.getDate() - 1;
+        // now that all the calls have been made and processin in parallel, wait for all the promises to resolve and update the necessary information
+        await Promise.all(promiseArray)
 
-        const ret = '';
+        // inject todays date
+        this.atcVersions.lastCheckDate = new Date();
         
         this.saveReleaseInfoToCache();
-        return this.atcVersions;
+        return;
     }
 
 }

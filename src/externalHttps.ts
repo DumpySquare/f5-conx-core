@@ -159,7 +159,7 @@ export class ExtHttp {
 
         const baseURL = new URL(options.url)
 
-        const resp = await this.axios.request(options)
+        return await this.axios.request(options)
             .then((resp: AxiosResponseWithTimings) => {
 
                 // only return the things we need
@@ -240,8 +240,6 @@ export class ExtHttp {
                 // })
 
             })
-
-        return resp;
     }
 
 
