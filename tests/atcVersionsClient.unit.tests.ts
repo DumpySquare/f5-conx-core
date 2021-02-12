@@ -15,7 +15,6 @@ import nock from 'nock';
 
 import { ExtHttp } from '../src/externalHttps';
 import { AtcVersionsClient } from '../src/bigip/atcVersionsClient'
-import Logger from "../src/logger";
 
 const events = []
 
@@ -40,8 +39,11 @@ describe('f5Client atc metaData integration tests', function () {
             .reply(200, cfResp)
 
         const extHttp = new ExtHttp();
-        const logger = new Logger();
-        const atcV = new AtcVersionsClient(extHttp, logger);
+        const atcV = new AtcVersionsClient(extHttp);
+
+        atcV.events.on('log-debug', msg => events.push(msg));
+        atcV.events.on('log-info', msg => events.push(msg));
+        atcV.events.on('log-error', msg => events.push(msg));
 
         await atcV.getAtcReleasesInfo()
             .then(atcVersions => {
@@ -53,7 +55,6 @@ describe('f5Client atc metaData integration tests', function () {
                 assert.ok(atcVersions.cf)
             })
             .catch(err => {
-                events.push(...atcV.logger.journal);
                 debugger;
             });
     });

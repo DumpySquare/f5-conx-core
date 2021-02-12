@@ -15,7 +15,7 @@ import fs from 'fs';
 import { Asset,  AtcVersions, GitRelease } from "./bigipModels";
 import { ExtHttp } from '../externalHttps';
 import { atcMetaData } from '../constants'
-import Logger from "../logger";
+import { EventEmitter } from "events";
 
 
 /**
@@ -33,11 +33,7 @@ export class AtcVersionsClient {
      * - also has the cache directory under .cacheDir
      */
     extHttp: ExtHttp;
-
-    /**
-     * main logger client for logging events across the project
-     */
-    logger: Logger;
+    events: EventEmitter;
 
     /**
      * ATC meta data including api endpoints, github releases url and main repo url
@@ -57,10 +53,10 @@ export class AtcVersionsClient {
 
     constructor(
         extHttp: ExtHttp,
-        logger: Logger
+        eventEmitter?: EventEmitter
     ) {
         this.extHttp = extHttp;
-        this.logger = logger;
+        this.events = eventEmitter ? eventEmitter : new EventEmitter;
     }
 
 
@@ -81,11 +77,11 @@ export class AtcVersionsClient {
         // is it today?
         if (checkDate === todayDate) {
             // was already checked/refreshed today, so pass cached info
-            this.logger.info('atc release version already checked today, returning cache');
+            this.events.emit('log-info', 'atc release version already checked today, returning cache');
             return this.atcVersions;
         } else {
             // has not been checked today, refresh
-            this.logger.info('atc release version has NOT been checked today, refreshing cache now');
+            this.events.emit('log-info', 'atc release version has NOT been checked today, refreshing cache now');
             await this.refreshAtcReleasesInfo();
             return this.atcVersions;
         }
@@ -100,7 +96,7 @@ export class AtcVersionsClient {
             const versionFile = fs.readFileSync(this.atcVersionsFileName).toString();
             this.atcVersions = JSON.parse(versionFile);
         } catch (e) {
-            this.logger.error('no atc release version metadata found at', this.atcVersionsFileName);
+            this.events.emit('log-error', `no atc release version metadata found at ${this.atcVersionsFileName}`);
         }
     }
 
@@ -115,7 +111,7 @@ export class AtcVersionsClient {
                 JSON.stringify(this.atcVersions, undefined, 4)
             );
         } catch (e) {
-            this.logger.error('not able to save atc versions info to ', this.atcVersionsFileName, e);
+            this.events.emit('log-error', `not able to save atc versions info to ${this.atcVersionsFileName}`);
         }
     }
 
@@ -169,7 +165,7 @@ export class AtcVersionsClient {
 
 
                 }).catch(err => {
-                    this.logger.error({
+                    this.events.emit('log-error', {
                         msg: `refreshAtcReleasesInfo, was not able to fetch release info for ${atc}`,
                         url: this.atcMetaData[atc].gitReleases,
                         resp: err 

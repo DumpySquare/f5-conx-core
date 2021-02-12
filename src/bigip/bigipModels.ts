@@ -127,7 +127,7 @@ export type AtcInfo = {
  * this data has a local cache but also updated from here:
  * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
  */
-export type AtcMetaData = {
+export type AtcMetaDataSdk = {
     components: {
         fast: FastMetaData,  
         do: DoMetaData,
