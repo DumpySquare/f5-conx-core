@@ -13,13 +13,13 @@ import assert from 'assert';
 import nock from 'nock';
 import fs from 'fs';
 import path from 'path';
-import { F5UploadPaths, TMP_DIR } from '../src/constants'
+import { F5UploadPaths } from '../src/constants'
 
 import { F5Client } from '../src/bigip/f5Client';
 import { getF5Client, ipv6Host } from '../src/utils/testingUtils';
 import { getFakeToken } from '../src/utils/testingUtils';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
-import { F5DownloadPaths, iControlEndpoints } from '../src/constants';
+import { iControlEndpoints } from '../src/constants';
 
 import { deviceInfoIPv6 } from './artifacts/f5_device_atc_infos';
 import { isObject } from '../src/utils/misc';
@@ -32,10 +32,6 @@ let nockScope: nock.Scope;
 const rpm = 'f5-appsvcs-templates-1.4.0-1.noarch.rpm';
 // source file with path
 const filePath = path.join(__dirname, 'artifacts', rpm)
-// tmp directory
-const tmpDir = path.join(__dirname, TMP_DIR)
-// destination test path with file name
-const tmp = path.join(tmpDir, rpm)
 
 const events = []
 let installedRpm;

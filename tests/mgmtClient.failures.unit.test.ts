@@ -20,6 +20,16 @@ import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 
 describe('mgmtClient tests - failures', async function () {
 
+    before( async function () {
+        // set timeout for testing
+        process.env.F5_CONX_CORE_TCP_TIMEOUT = "10000"
+    })
+
+    after( async function () {
+        // un-set timeout after these tests
+        delete process.env.F5_CONX_CORE_TCP_TIMEOUT
+    })
+
     afterEach(async function () {
         // Alert if all our nocks didn't get used, and clear them out
         if (!nock.isDone()) {
@@ -37,7 +47,7 @@ describe('mgmtClient tests - failures', async function () {
         // https://github.com/nock/nock#delay-the-connection
         nock(`https://192.0.0.1:8443`)
         .post('/mgmt/shared/authn/login')
-        .delayConnection(10000)
+        .delayConnection(60000)
         .reply(200, (uri, reqBody: AuthTokenReqBody) => {
             return getFakeToken(reqBody.username, reqBody.loginProviderName);
         })
@@ -62,17 +72,16 @@ describe('mgmtClient tests - failures', async function () {
         await mgmtClientLocal.makeRequest('/foo')
             .then( resp => {
              // look at response
-             resp
+             debugger;
             })
             .catch(err => {
                 // if this test failed, check events to see why
-                // debugger;
+                // examples:
+                // 'token request failed: connect ETIMEDOUT 192.0.0.1:8443'
+                // 'token request failed: timeout of 10000ms exceeded'
+                assert.ok(eventsLocal[eventsLocal.length - 1].includes('token request failed'))
             })
 
-            // examples:
-            // 'token request failed: connect ETIMEDOUT 192.0.0.1:8443'
-            // 'token request failed: timeout of 3000ms exceeded'
-        assert.ok(eventsLocal[eventsLocal.length - 1].includes('token request failed'))
     });
 
     it('fail host dns resolve', async function () {
@@ -120,14 +129,14 @@ describe('mgmtClient tests - failures', async function () {
         mgmtClientLocal.events.on('log-error', msg => eventsLocal.push(msg));
 
         await mgmtClientLocal.makeRequest('/foo')
-            // .then( resp => {
-            //  // look at response
-            // })
+            .then( resp => {
+             // look at response
+            })
             .catch(err => {
-                // if this test failed, check events to see why
+                // this should fail and provide an event why
                 // debugger;
+                assert.ok(JSON.stringify(eventsLocal).includes('Authentication failed.'))
             })
 
-        assert.ok(JSON.stringify(eventsLocal).includes('Authentication failed.'))
     });
 });

@@ -192,7 +192,7 @@ describe('ExtHttps class tests', function () {
 
         const url = `https://${testHost}/${rpm}`;
 
-        await extHttp.download(url, undefined, tmpDir)
+        await extHttp.download(url)
             .then(resp => {
 
                 // assert it downloaded the file we wanted
@@ -204,7 +204,7 @@ describe('ExtHttps class tests', function () {
             })
             .catch(err => {
                 debugger;
-                return Promise.reject(err)
+                // throw err;
             });
     });
 

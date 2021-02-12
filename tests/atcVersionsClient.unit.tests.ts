@@ -18,7 +18,15 @@ import { AtcVersionsClient } from '../src/bigip/atcVersionsClient'
 
 const events = []
 
-describe('f5Client atc metaData integration tests', function () {
+describe('atc versions unit tests', function () {
+
+    after(async function () {
+        // Alert if all our nocks didn't get used, and clear them out
+        // if (!nock.isDone()) {
+        //     throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`)
+        // }
+        nock.cleanAll();
+    });
 
     // so this test suite accomplishes to things
     // 1. test the freshing of atc versions cache information
