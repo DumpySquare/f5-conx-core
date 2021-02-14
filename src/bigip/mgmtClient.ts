@@ -114,7 +114,7 @@ export class MgmtClient {
             headers: {
                 'content-type': 'application/json'
             },
-            transport
+            // transport
         }
 
 
@@ -251,7 +251,7 @@ export class MgmtClient {
         // merge incoming options into requestDefaults object
         options = Object.assign(requestDefaults, options)
 
-        return await this.axios(options)
+        return await this.axios.request(options)
             .then((resp: AxiosResponseWithTimings) => {
 
 
@@ -280,7 +280,7 @@ export class MgmtClient {
                 if (err.response) {
                     // The request was made and the server responded with a status code
                     // that falls out of the range of 2xx
-                    this.events.emit('log-debug', `HTTPS-RESP [${err.response.config.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
+                    // this.events.emit('log-debug', `HTTPS-RESP [${err.response.config.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
 
                     // only return the things we need...  we'll see...
                     return Promise.reject({
@@ -407,7 +407,7 @@ export class MgmtClient {
 
 
             // todo: break out the successful and failed results, only refresh statusBars on successful
-            if (resp.data?.status === 'FINISHED' ) {
+            if (resp.data?.status === 'FINISHED') {
                 retryTimerArray.length = 0;
             }
 
@@ -445,7 +445,22 @@ export class MgmtClient {
         return response;
     }
 
+    // ##########################################################################
+    // ##########################################################################
+    // ##########################################################################
+    // ##########################################################################
 
+    /**
+     * 
+     * https://support.f5.com/csp/article/K41763344
+     * 
+     * 
+     */
+
+    // ##########################################################################
+    // ##########################################################################
+    // ##########################################################################
+    // ##########################################################################
 
     /**
      * download file from f5 (ucs/qkview/iso)
@@ -463,12 +478,13 @@ export class MgmtClient {
      * @param localDestPathFile where to put the file (including file name)
      * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
      */
-    async download(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<HttpResponse> {
+    async download(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<any> {
 
         // if auth token has expired, it should have been cleared, get new one
         if (!this._token) {
             await this.getToken();
         }
+
 
         // swap out download url as needed (ternary method)
         const url =
@@ -482,6 +498,19 @@ export class MgmtClient {
                 ? localDestPath
                 : `${localDestPath}/${fileName}`;
 
+        // const options: uuidAxiosRequestConfig = {
+        //     baseURL: `https://${this.host}:${this.port}`,
+        //     url,
+        //     httpsAgent: new https.Agent({
+        //         rejectUnauthorized: false,
+        //     }),
+        //     headers: {
+        //         'x-f5-auth-token': this._token.token
+        //     },
+        //     responseType: 'stream'
+        // }
+
+
         this.events.emit('log-debug', {
             message: 'pending download',
             fileName,
@@ -491,33 +520,259 @@ export class MgmtClient {
 
         const writable = fs.createWriteStream(fileP)
 
+        // const resp = await axios.request(options)
+        // resp.data.pipe(writable)
+
+        const resp2 = []
+
         return new Promise(((resolve, reject) => {
 
             this.makeRequest(url, { responseType: 'stream' })
-                .then(resp => {
+                .then(async resp => {
+
+                    resp2.push(resp);
                     resp.data.pipe(writable)
-                        // .on('finish', resolve)
-                        .on('finish', () => {
+                    // 
+                    let contentRange = resp.headers['content-range']
+                    let contentLength = resp.headers['content-length']
+                    const contentEnd = contentRange.split('/').pop();
+                    
+                    contentRange = resp.headers['content-range']
+                    let currentChunkEnd = contentRange.split('/')[0].split('-')[1]
+                    let nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
+                    let nextChunkEnd = (parseInt(currentChunkEnd) + (parseInt(contentLength) - 1));
+                    
+                    if (resp.status === 206) {
+                        let loopCount = 5;
 
-                            // over-write response data
-                            resp.data = {
-                                file: writable.path,
-                                bytes: writable.bytesWritten
-                            };
-
-                            this.events.emit('log-debug', {
-                                message: 'download complete',
-                                data: resp.data
+                        
+                        while (loopCount > 0) {
+        
+                            // next chunk end is bigger than full content lenght, so this is the last chunk
+                            if (nextChunkEnd >= contentEnd) {
+                                // allow our loop to run one more time and set the final data chunk end
+                                loopCount = 0;
+                                // make last chunk end match total size
+                                nextChunkEnd = contentEnd;
+                                // make the content length match the size of the last chuck being called for
+                                contentLength = contentEnd - parseInt(nextChunkStart);
+                                debugger;
+                            }
+        
+                            await this.makeRequest(url, {
+                                responseType: 'stream',
+                                headers: {
+                                    "Content-Range": `${nextChunkStart}-${nextChunkEnd}/${contentEnd}`,
+                                    "content-type": 'application/octet-stream'
+                                }
                             })
+                            .then( respIn => {
+                                resp2.push(respIn);
+                                // resp.data.pipe(respIn);
+                                contentRange = respIn.headers['content-range']
+                                currentChunkEnd = contentRange.split('/')[0].split('-')[1]
+                                nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
+                                nextChunkEnd = (parseInt(currentChunkEnd) + (parseInt(contentLength) - 1));
+         
+                                debugger;
+                            })
+                            .catch( err => {
+                                debugger;
+                            })
+                            loopCount - 1;
+                        }
+                        debugger;
 
-                            return resolve(resp);
-                        });
+                    }
+
+                    if (resp.status === 200) {
+                        debugger;
+                    }
                 })
                 .catch(err => {
                     // look at adding more failure details, like,
                     // was it tcp, dns, dest url problem, write file problem, ...
                     return reject(err)
                 })
+
+                writable
+                .on('finish', () => {
+
+                    // over-write response data
+                    // resp.data = {
+                    //     file: writable.path,
+                    //     bytes: writable.bytesWritten
+                    // };
+
+                    // this.events.emit('log-debug', {
+                    //     message: 'download complete',
+                    //     data: resp.data
+                    // })
+
+                    return resolve(resp2);
+                })
+                .on('error', err => {
+                    debugger;
+                    return reject(err);
+                });
+        }));
+    }
+    
+    
+    
+    /**
+     * download file from f5 (ucs/qkview/iso)
+     * - UCS
+     *   - uri: /mgmt/shared/file-transfer/ucs-downloads/${fileName}
+     *   - path: /var/local/ucs/${fileName}
+     * - QKVIEW
+     *   - uri: /mgmt/cm/autodeploy/qkview-downloads/${fileName}
+     *   - path: /var/tmp/${fileName}
+     * - ISO
+     *   - uri: /mgmt/cm/autodeploy/software-image-downloads/${fileName}
+     *   - path: /shared/images/${fileName}
+     * 
+     * @param fileName file name on bigip
+     * @param localDestPathFile where to put the file (including file name)
+     * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
+     */
+    async downloadOriginal(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<any> {
+
+        // if auth token has expired, it should have been cleared, get new one
+        if (!this._token) {
+            await this.getToken();
+        }
+
+
+        // swap out download url as needed (ternary method)
+        const url =
+            downloadType === 'UCS' ? `${F5DownloadPaths.ucs.uri}/${fileName}`
+                : downloadType === 'QKVIEW' ? `${F5DownloadPaths.qkview.uri}/${fileName}`
+                    : `${F5DownloadPaths.iso.uri}/${fileName}`;
+
+        //  if we got a dest path with no filename, append the filename
+        const fileP
+            = path.parse(localDestPath).ext
+                ? localDestPath
+                : `${localDestPath}/${fileName}`;
+
+        // const options: uuidAxiosRequestConfig = {
+        //     baseURL: `https://${this.host}:${this.port}`,
+        //     url,
+        //     httpsAgent: new https.Agent({
+        //         rejectUnauthorized: false,
+        //     }),
+        //     headers: {
+        //         'x-f5-auth-token': this._token.token
+        //     },
+        //     responseType: 'stream'
+        // }
+
+
+        this.events.emit('log-debug', {
+            message: 'pending download',
+            fileName,
+            localDestPath,
+            downloadType
+        })
+
+        const writable = fs.createWriteStream(fileP)
+
+        // const resp = await axios.request(options)
+        // resp.data.pipe(writable)
+
+        const resp2 = []
+
+        return new Promise(((resolve, reject) => {
+
+            this.makeRequest(url, { responseType: 'stream' })
+                .then(async resp => {
+
+                    resp2.push(resp);
+                    resp.data.pipe(writable)
+                    // 
+                    let contentRange = resp.headers['content-range']
+                    let contentLength = resp.headers['content-length']
+                    const contentEnd = contentRange.split('/').pop();
+                    
+                    contentRange = resp.headers['content-range']
+                    let currentChunkEnd = contentRange.split('/')[0].split('-')[1]
+                    let nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
+                    let nextChunkEnd = (parseInt(currentChunkEnd) + (parseInt(contentLength) - 1));
+                    
+                    if (resp.status === 206) {
+                        let loopCount = 5;
+
+                        
+                        while (loopCount > 0) {
+        
+                            // next chunk end is bigger than full content lenght, so this is the last chunk
+                            if (nextChunkEnd >= contentEnd) {
+                                // allow our loop to run one more time and set the final data chunk end
+                                loopCount = 0;
+                                // make last chunk end match total size
+                                nextChunkEnd = contentEnd;
+                                // make the content length match the size of the last chuck being called for
+                                contentLength = contentEnd - parseInt(nextChunkStart);
+                                debugger;
+                            }
+        
+                            await this.makeRequest(url, {
+                                responseType: 'stream',
+                                headers: {
+                                    "Content-Range": `${nextChunkStart}-${nextChunkEnd}/${contentEnd}`,
+                                    "content-type": 'application/octet-stream'
+                                }
+                            })
+                            .then( respIn => {
+                                resp2.push(respIn);
+                                // resp.data.pipe(respIn);
+                                contentRange = respIn.headers['content-range']
+                                currentChunkEnd = contentRange.split('/')[0].split('-')[1]
+                                nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
+                                nextChunkEnd = (parseInt(currentChunkEnd) + (parseInt(contentLength) - 1));
+         
+                                debugger;
+                            })
+                            .catch( err => {
+                                debugger;
+                            })
+                            loopCount - 1;
+                        }
+                        debugger;
+
+                    }
+
+                    if (resp.status === 200) {
+                        debugger;
+                    }
+                })
+                .catch(err => {
+                    // look at adding more failure details, like,
+                    // was it tcp, dns, dest url problem, write file problem, ...
+                    return reject(err)
+                })
+
+                writable
+                .on('finish', () => {
+
+                    // over-write response data
+                    // resp.data = {
+                    //     file: writable.path,
+                    //     bytes: writable.bytesWritten
+                    // };
+
+                    // this.events.emit('log-debug', {
+                    //     message: 'download complete',
+                    //     data: resp.data
+                    // })
+
+                    return resolve(resp2);
+                })
+                .on('error', err => {
+                    debugger;
+                    return reject(err);
+                });
         }));
     }
 

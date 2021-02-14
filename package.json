@@ -36,7 +36,8 @@
     },
     "dependencies": {
         "@szmarczak/http-timer": "^4.0.5",
-        "axios": "^0.21.1"
+        "axios": "^0.21.1",
+        "vscode-test-adapter-remoting-util": "^0.12.0"
     },
     "devDependencies": {
         "@types/assert": "^1.5.2",
