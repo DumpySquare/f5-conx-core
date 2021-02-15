@@ -20,6 +20,7 @@ import { Token, F5DownLoad, F5Upload, F5InfoApi } from './bigipModels';
 import { HttpResponse, uuidAxiosRequestConfig, AxiosResponseWithTimings } from "../utils/httpModels";
 import { F5DownloadPaths, F5UploadPaths } from '../constants';
 import { getRandomUUID } from '../utils/misc';
+import { on } from 'process';
 
 
 /**
@@ -252,87 +253,87 @@ export class MgmtClient {
         options = Object.assign(requestDefaults, options)
 
         return await this.axios.request(options)
-            .then((resp: AxiosResponseWithTimings) => {
+        // .then((resp: AxiosResponseWithTimings) => {
 
 
-                // only return the things we need
-                return {
-                    data: resp.data,
-                    headers: resp.headers,
-                    status: resp.status,
-                    statusText: resp.statusText,
-                    request: {
-                        uuid: resp.config.uuid,
-                        baseURL: resp.config.baseURL,
-                        url: resp.config.url,
-                        method: resp.request.method,
-                        headers: resp.config.headers,
-                        protocol: resp.config.httpsAgent.protocol,
-                        timings: resp.request.timings
-                    }
-                }
-            })
-            .catch(err => {
+        //     // only return the things we need
+        //     return {
+        //         data: resp.data,
+        //         headers: resp.headers,
+        //         status: resp.status,
+        //         statusText: resp.statusText,
+        //         request: {
+        //             uuid: resp.config.uuid,
+        //             baseURL: resp.config.baseURL,
+        //             url: resp.config.url,
+        //             method: resp.request.method,
+        //             headers: resp.config.headers,
+        //             protocol: resp.config.httpsAgent.protocol,
+        //             timings: resp.request.timings
+        //         }
+        //     }
+        // })
+        // .catch(err => {
 
-                // todo: rework this to build a singe err-response object to be passed back as an event
+        //     // todo: rework this to build a singe err-response object to be passed back as an event
 
-                // https://github.com/axios/axios#handling-errors
-                if (err.response) {
-                    // The request was made and the server responded with a status code
-                    // that falls out of the range of 2xx
-                    // this.events.emit('log-debug', `HTTPS-RESP [${err.response.config.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
+        //     // https://github.com/axios/axios#handling-errors
+        //     if (err.response) {
+        //         // The request was made and the server responded with a status code
+        //         // that falls out of the range of 2xx
+        //         // this.events.emit('log-debug', `HTTPS-RESP [${err.response.config.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
 
-                    // only return the things we need...  we'll see...
-                    return Promise.reject({
-                        data: err.response.data,
-                        headers: err.response.headers,
-                        status: err.response.status,
-                        statusText: err.response.statusText,
-                        request: {
-                            uuid: err.response.config.uuid,
-                            baseURL: err.response.config.baseURL,
-                            url: err.response.config.url,
-                            method: err.request.method,
-                            headers: err.request.headers,
-                            protocol: err.response.config.httpsAgent.protocol,
-                            timings: err.request.timings
-                        }
-                    })
+        //         // only return the things we need...  we'll see...
+        //         return Promise.reject({
+        //             data: err.response.data,
+        //             headers: err.response.headers,
+        //             status: err.response.status,
+        //             statusText: err.response.statusText,
+        //             request: {
+        //                 uuid: err.response.config.uuid,
+        //                 baseURL: err.response.config.baseURL,
+        //                 url: err.response.config.url,
+        //                 method: err.request.method,
+        //                 headers: err.request.headers,
+        //                 protocol: err.response.config.httpsAgent.protocol,
+        //                 timings: err.request.timings
+        //             }
+        //         })
 
-                } else if (err.request) {
+        //     } else if (err.request) {
 
-                    // The request was made but no response was received
-                    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-                    // http.ClientRequest in node.js
-                    this.events.emit('log-error', {
-                        message: 'HTTPS-REQUEST-FAILED',
-                        path: err.request.path,
-                        err: err.message
-                    })
-                    // return Promise.reject(err.request)
+        //         // The request was made but no response was received
+        //         // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+        //         // http.ClientRequest in node.js
+        //         this.events.emit('log-error', {
+        //             message: 'HTTPS-REQUEST-FAILED',
+        //             path: err.request.path,
+        //             err: err.message
+        //         })
+        //         // return Promise.reject(err.request)
 
-                } else {
+        //     } else {
 
-                    // got a lower level (config) failure
-                    // not sure how to test this...
-                    /* istanbul ignore next */
-                    this.events.emit('log-error', {
-                        message: 'HTTPS request failed',
-                        uuid: err.response.config.uuid,
-                        err
-                    })
+        //         // got a lower level (config) failure
+        //         // not sure how to test this...
+        //         /* istanbul ignore next */
+        //         this.events.emit('log-error', {
+        //             message: 'HTTPS request failed',
+        //             uuid: err.response.config.uuid,
+        //             err
+        //         })
 
-                }
-                return Promise.reject(err)
+        //     }
+        //     return Promise.reject(err)
 
-                // thought:  just log the individual situations and have a single reject clause like below
-                // return Promise.reject({
-                //     message: 'HTTPS request failed',
-                //     uuid,
-                //     err
-                // })
+        //     // thought:  just log the individual situations and have a single reject clause like below
+        //     // return Promise.reject({
+        //     //     message: 'HTTPS request failed',
+        //     //     uuid,
+        //     //     err
+        //     // })
 
-            })
+        // })
     }
 
 
@@ -518,85 +519,13 @@ export class MgmtClient {
             downloadType
         })
 
-        const writable = fs.createWriteStream(fileP)
-
-        // const resp = await axios.request(options)
-        // resp.data.pipe(writable)
-
-        const resp2 = []
-
-        return new Promise(((resolve, reject) => {
-
-            this.makeRequest(url, { responseType: 'stream' })
-                .then(async resp => {
-
-                    resp2.push(resp);
-                    resp.data.pipe(writable)
-                    // 
-                    let contentRange = resp.headers['content-range']
-                    let contentLength = resp.headers['content-length']
-                    const contentEnd = contentRange.split('/').pop();
-                    
-                    contentRange = resp.headers['content-range']
-                    let currentChunkEnd = contentRange.split('/')[0].split('-')[1]
-                    let nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
-                    let nextChunkEnd = (parseInt(currentChunkEnd) + (parseInt(contentLength) - 1));
-                    
-                    if (resp.status === 206) {
-                        let loopCount = 5;
-
-                        
-                        while (loopCount > 0) {
-        
-                            // next chunk end is bigger than full content lenght, so this is the last chunk
-                            if (nextChunkEnd >= contentEnd) {
-                                // allow our loop to run one more time and set the final data chunk end
-                                loopCount = 0;
-                                // make last chunk end match total size
-                                nextChunkEnd = contentEnd;
-                                // make the content length match the size of the last chuck being called for
-                                contentLength = contentEnd - parseInt(nextChunkStart);
-                                debugger;
-                            }
-        
-                            await this.makeRequest(url, {
-                                responseType: 'stream',
-                                headers: {
-                                    "Content-Range": `${nextChunkStart}-${nextChunkEnd}/${contentEnd}`,
-                                    "content-type": 'application/octet-stream'
-                                }
-                            })
-                            .then( respIn => {
-                                resp2.push(respIn);
-                                // resp.data.pipe(respIn);
-                                contentRange = respIn.headers['content-range']
-                                currentChunkEnd = contentRange.split('/')[0].split('-')[1]
-                                nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
-                                nextChunkEnd = (parseInt(currentChunkEnd) + (parseInt(contentLength) - 1));
-         
-                                debugger;
-                            })
-                            .catch( err => {
-                                debugger;
-                            })
-                            loopCount - 1;
-                        }
-                        debugger;
-
-                    }
-
-                    if (resp.status === 200) {
-                        debugger;
-                    }
+        return new Promise(async (resolve, reject) => {
+            const writable = fs.createWriteStream(fileP)
+                // writable
+                .on('data', d => {
+                    const x = d;
                 })
-                .catch(err => {
-                    // look at adding more failure details, like,
-                    // was it tcp, dns, dest url problem, write file problem, ...
-                    return reject(err)
-                })
-
-                writable
-                .on('finish', () => {
+                .on('finish', f => {
 
                     // over-write response data
                     // resp.data = {
@@ -604,22 +533,99 @@ export class MgmtClient {
                     //     bytes: writable.bytesWritten
                     // };
 
-                    // this.events.emit('log-debug', {
-                    //     message: 'download complete',
-                    //     data: resp.data
-                    // })
+                    this.events.emit('log-debug', {
+                        message: 'download complete',
+                        // data: resp.data
+                    })
 
-                    return resolve(resp2);
+                    return resolve(resp);
                 })
                 .on('error', err => {
                     debugger;
                     return reject(err);
                 });
-        }));
+
+            // const resp = await axios.request(options)
+            // resp.data.pipe(writable)
+
+            // https://github.com/andrewstart/axios-streaming/blob/master/axios.js
+
+            const resp = []
+
+            let chunkSize: number = undefined;  // content-lenght
+            let totalSize: number = undefined;
+            // let chunkStart: number = undefined;
+            let chunkEnd: number = undefined;
+            let nextChunkEnd: number = undefined
+
+
+
+            do {
+
+                // base request object
+                const reqObject: AxiosRequestConfig = {
+                    baseURL: `https://${this.host}:${this.port}`,
+                    url,
+                    httpsAgent: new https.Agent({
+                        rejectUnauthorized: false,
+                    }),
+                    headers: {
+                        'x-f5-auth-token': this._token.token
+                    },
+                    responseType: 'stream'
+                }
+
+                nextChunkEnd = chunkEnd + chunkSize;
+
+                if (nextChunkEnd >= totalSize) {
+                    // fix the last chunk end length
+                    nextChunkEnd = (totalSize - 1)
+                }
+
+
+                // total size has a value -> means we got a 206 with range headers
+                if (totalSize) {
+                    reqObject.headers["Content-Range"] = `${chunkEnd + 1}-${nextChunkEnd}/${totalSize}`,
+                        reqObject.headers["Content-Type"] = 'application/octet-stream'
+                }
+
+                await axios.request(reqObject)
+                    .then(respIn => {
+
+                        // respIn.data.pipe(writable)
+                        // resp.push(respIn)    // push response to array
+
+                        // respIn.data.write()
+                        respIn.data.on('data', d => {
+                            writable.write(d);
+                        })
+
+                        chunkSize = parseInt(respIn.headers['content-length'])
+                        const contentRange = respIn.headers['content-range'];
+                        chunkEnd = parseInt(contentRange.split('/')[0].split('-')[1])
+                        totalSize = parseInt(contentRange.split('/')[1]);
+
+                    })
+                    .catch(err => {
+                        debugger;
+                        throw err;
+                    })
+
+                // resp.data.pipe(writable)
+
+
+
+
+            }
+            while ((chunkEnd + 1) !== totalSize);
+            debugger;
+
+
+        })
     }
-    
-    
-    
+
+
+
     /**
      * download file from f5 (ucs/qkview/iso)
      * - UCS
@@ -688,55 +694,57 @@ export class MgmtClient {
             this.makeRequest(url, { responseType: 'stream' })
                 .then(async resp => {
 
-                    resp2.push(resp);
+                    await resp2.push(resp);
                     resp.data.pipe(writable)
                     // 
                     let contentRange = resp.headers['content-range']
-                    let contentLength = resp.headers['content-length']
+                    let contentLength: number = parseInt(resp.headers['content-length'])
                     const contentEnd = contentRange.split('/').pop();
-                    
+
                     contentRange = resp.headers['content-range']
                     let currentChunkEnd = contentRange.split('/')[0].split('-')[1]
                     let nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
-                    let nextChunkEnd = (parseInt(currentChunkEnd) + (parseInt(contentLength) - 1));
-                    
+                    let nextChunkEnd = (parseInt(currentChunkEnd) + (contentLength));
+
                     if (resp.status === 206) {
                         let loopCount = 5;
 
-                        
+
                         while (loopCount > 0) {
-        
+
                             // next chunk end is bigger than full content lenght, so this is the last chunk
                             if (nextChunkEnd >= contentEnd) {
                                 // allow our loop to run one more time and set the final data chunk end
                                 loopCount = 0;
                                 // make last chunk end match total size
-                                nextChunkEnd = contentEnd;
+                                nextChunkEnd = contentEnd - 1;
                                 // make the content length match the size of the last chuck being called for
-                                contentLength = contentEnd - parseInt(nextChunkStart);
+                                contentLength = contentEnd - parseInt(nextChunkStart); //  972,245
                                 debugger;
                             }
-        
+
                             await this.makeRequest(url, {
                                 responseType: 'stream',
                                 headers: {
                                     "Content-Range": `${nextChunkStart}-${nextChunkEnd}/${contentEnd}`,
-                                    "content-type": 'application/octet-stream'
+                                    // "Content-Length": `${contentLength}`,
+                                    "Content-Type": 'application/octet-stream'
                                 }
                             })
-                            .then( respIn => {
-                                resp2.push(respIn);
-                                // resp.data.pipe(respIn);
-                                contentRange = respIn.headers['content-range']
-                                currentChunkEnd = contentRange.split('/')[0].split('-')[1]
-                                nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
-                                nextChunkEnd = (parseInt(currentChunkEnd) + (parseInt(contentLength) - 1));
-         
-                                debugger;
-                            })
-                            .catch( err => {
-                                debugger;
-                            })
+                                .then(respIn => {
+                                    resp2.push(respIn);
+                                    // resp.data.pipe(respIn);
+                                    contentRange = respIn.headers['content-range']
+                                    currentChunkEnd = contentRange.split('/')[0].split('-')[1]
+                                    nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
+                                    nextChunkEnd = (parseInt(currentChunkEnd) + (contentLength - 1));
+
+                                    debugger;
+                                })
+                                .catch(err => {
+                                    resp2.push(err)
+                                    debugger;
+                                })
                             loopCount - 1;
                         }
                         debugger;
@@ -753,7 +761,7 @@ export class MgmtClient {
                     return reject(err)
                 })
 
-                writable
+            writable
                 .on('finish', () => {
 
                     // over-write response data

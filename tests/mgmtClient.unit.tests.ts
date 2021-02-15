@@ -332,6 +332,12 @@ describe('mgmtClient unit tests - successes', function () {
         await mgmtClient.download(rpm, tmp, 'ISO')
         .then( resp => {
               // download file
+
+            //   const newMap = resp.map( el => {
+            //       return Object.entries(el.headers).filter( ([key, val]) => {
+            //           return key.includes('content');
+            //       })
+            //   })
               assert.deepStrictEqual(
                   resp.data.bytes, 
                   fileStat.size, 
@@ -345,33 +351,33 @@ describe('mgmtClient unit tests - successes', function () {
     });
 
 
-    it('download file from F5 - UCS path', async function () {
-        this.slow(200);
-        nockInst
-            .persist()
-            .get(`${F5DownloadPaths.ucs.uri}/${rpm}`)
-            .replyWithFile(200, filePath);
+    // it('download file from F5 - UCS path', async function () {
+    //     this.slow(200);
+    //     nockInst
+    //         .persist()
+    //         .get(`${F5DownloadPaths.ucs.uri}/${rpm}`)
+    //         .replyWithFile(200, filePath);
 
-        const resp = await mgmtClient.download(rpm, tmp, 'UCS');    // download file
+    //     const resp = await mgmtClient.download(rpm, tmp, 'UCS');    // download file
 
-        assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
-        fs.unlinkSync(resp.data.file);                     // remove tmp file
-    });
+    //     assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
+    //     fs.unlinkSync(resp.data.file);                     // remove tmp file
+    // });
 
 
-    it('download file from F5 - qkview path', async function () {
-        this.slow(200);
-        nockInst
+    // it('download file from F5 - qkview path', async function () {
+    //     this.slow(200);
+    //     nockInst
 
-            .persist()
-            .get(`${F5DownloadPaths.qkview.uri}/${rpm}`)
-            .replyWithFile(200, filePath);
+    //         .persist()
+    //         .get(`${F5DownloadPaths.qkview.uri}/${rpm}`)
+    //         .replyWithFile(200, filePath);
 
-        const resp = await mgmtClient.download(rpm, tmp, 'QKVIEW');    // download file
+    //     const resp = await mgmtClient.download(rpm, tmp, 'QKVIEW');    // download file
 
-        assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
-        fs.unlinkSync(resp.data.file);                     // remove tmp file
-    });
+    //     assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
+    //     fs.unlinkSync(resp.data.file);                     // remove tmp file
+    // });
 
 
     
