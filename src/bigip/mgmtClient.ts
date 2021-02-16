@@ -19,8 +19,8 @@ import timer from '@szmarczak/http-timer/dist/source';
 import { Token, F5DownLoad, F5Upload, F5InfoApi } from './bigipModels';
 import { HttpResponse, uuidAxiosRequestConfig, AxiosResponseWithTimings } from "../utils/httpModels";
 import { F5DownloadPaths, F5UploadPaths } from '../constants';
-import { getRandomUUID } from '../utils/misc';
-import { on } from 'process';
+import { getRandomUUID, wait } from '../utils/misc';
+
 
 
 /**
@@ -115,7 +115,7 @@ export class MgmtClient {
             headers: {
                 'content-type': 'application/json'
             },
-            // transport
+            transport
         }
 
 
@@ -499,19 +499,6 @@ export class MgmtClient {
                 ? localDestPath
                 : `${localDestPath}/${fileName}`;
 
-        // const options: uuidAxiosRequestConfig = {
-        //     baseURL: `https://${this.host}:${this.port}`,
-        //     url,
-        //     httpsAgent: new https.Agent({
-        //         rejectUnauthorized: false,
-        //     }),
-        //     headers: {
-        //         'x-f5-auth-token': this._token.token
-        //     },
-        //     responseType: 'stream'
-        // }
-
-
         this.events.emit('log-debug', {
             message: 'pending download',
             fileName,
@@ -519,59 +506,25 @@ export class MgmtClient {
             downloadType
         })
 
+        const resp = []
         return new Promise(async (resolve, reject) => {
-            const writable = fs.createWriteStream(fileP)
-                // writable
-                .on('data', d => {
-                    const x = d;
-                })
-                .on('finish', f => {
 
-                    // over-write response data
-                    // resp.data = {
-                    //     file: writable.path,
-                    //     bytes: writable.bytesWritten
-                    // };
 
-                    this.events.emit('log-debug', {
-                        message: 'download complete',
-                        // data: resp.data
-                    })
-
-                    return resolve(resp);
-                })
-                .on('error', err => {
-                    debugger;
-                    return reject(err);
-                });
-
-            // const resp = await axios.request(options)
-            // resp.data.pipe(writable)
+            const file = fs.createWriteStream(fileP)
 
             // https://github.com/andrewstart/axios-streaming/blob/master/axios.js
 
-            const resp = []
 
             let chunkSize: number = undefined;  // content-lenght
             let totalSize: number = undefined;
-            // let chunkStart: number = undefined;
             let chunkEnd: number = undefined;
             let nextChunkEnd: number = undefined
 
 
-
             do {
 
-                // base request object
-                const reqObject: AxiosRequestConfig = {
-                    baseURL: `https://${this.host}:${this.port}`,
-                    url,
-                    httpsAgent: new https.Agent({
-                        rejectUnauthorized: false,
-                    }),
-                    headers: {
-                        'x-f5-auth-token': this._token.token
-                    },
+                const reqObject: uuidAxiosRequestConfig = {
+                    headers: {},
                     responseType: 'stream'
                 }
 
@@ -589,15 +542,11 @@ export class MgmtClient {
                         reqObject.headers["Content-Type"] = 'application/octet-stream'
                 }
 
-                await axios.request(reqObject)
+                await this.makeRequest(url, reqObject)
                     .then(respIn => {
 
-                        // respIn.data.pipe(writable)
-                        // resp.push(respIn)    // push response to array
-
-                        // respIn.data.write()
-                        respIn.data.on('data', d => {
-                            writable.write(d);
+                        respIn.data.on('data', data => {
+                            file.write(data);
                         })
 
                         chunkSize = parseInt(respIn.headers['content-length'])
@@ -605,25 +554,36 @@ export class MgmtClient {
                         chunkEnd = parseInt(contentRange.split('/')[0].split('-')[1])
                         totalSize = parseInt(contentRange.split('/')[1]);
 
+                        if ((chunkEnd + 1) === totalSize) {
+                            // this is the last chunk, so close file write stream when done
+                            respIn.data.on('end', () => {
+                                file.end();
+                            })
+                        }
+
                     })
-                    .catch(err => {
-                        debugger;
-                        throw err;
-                    })
-
-                // resp.data.pipe(writable)
-
-
-
 
             }
             while ((chunkEnd + 1) !== totalSize);
-            debugger;
 
-
+            file
+                .on('error', err => {
+                    // debugger;
+                    return reject(err);
+                })
+                .on('finish', f => {
+                    // await new Promise(resolve => { setTimeout(resolve, 3000); });
+                    // setTimeout(resolve, 3000);
+                    return resolve({
+                        data: {
+                            file: file.path,
+                            bytes: file.bytesWritten
+                        }
+                    });
+                })
         })
+        .then( respond => wait(1000, respond));
     }
-
 
 
     /**
@@ -898,3 +858,5 @@ export class MgmtClient {
         }
     }
 }
+
+
