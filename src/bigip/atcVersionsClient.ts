@@ -39,10 +39,19 @@ export class AtcVersionsClient {
      * ATC meta data including api endpoints, github releases url and main repo url
      */
     atcMetaData = atcMetaData;
+
+    /**
+     * base atc version information that comes with the package
+     * 
+     * *updated with every release of f5-conx-core*
+     */
+    atcVersionsBaseCache = require('./atcVersions.json');
+
+    lastCheckDate: Date | undefined;
     /**
      * atc version cache name/location
      * 
-     * '/home/someUser/f5-conx-core/src/bigip/atcMetaData.json'
+     * '/home/someUser/f5-conx-core/src/bigip/atcVersions.json'
      */
     atcVersionsFileName = path.join(__dirname, 'atcVersions.json');
 
@@ -178,6 +187,13 @@ export class AtcVersionsClient {
 
         // now that all the calls have been made and processin in parallel, wait for all the promises to resolve and update the necessary information
         await Promise.all(promiseArray)
+
+        // if we made i this far and still no atc version information from github
+        if(this.atcVersions === {}) {
+            // apply base cache that comes with the project
+            // this should get updated at every package release
+            this.atcVersions = this.atcVersionsBaseCache;
+        }
 
         // inject todays date
         this.atcVersions.lastCheckDate = new Date();
