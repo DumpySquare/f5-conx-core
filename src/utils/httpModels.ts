@@ -31,6 +31,7 @@ export type F5HttpRequest = {
 }
 
 
+
 /**
  * custom http response with timings, based on axios response
  */
@@ -40,7 +41,7 @@ export type HttpResponse<T = any> = {
     statusText: string,
     headers: unknown,
     async?: HttpResponse[],
-    request: {
+    request?: {
         baseURL: string,
         url: string,
         uuid?: string,
@@ -60,6 +61,7 @@ export type HttpResponse<T = any> = {
 // the following are only used for setting up the axios instance and injecting the uuid/timing.  
 export interface AxiosResponseWithTimings extends AxiosResponse {
     config: uuidAxiosRequestConfig
+    async?: HttpResponse[],
 }
 
 

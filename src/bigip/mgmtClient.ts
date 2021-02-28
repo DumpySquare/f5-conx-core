@@ -19,7 +19,7 @@ import timer from '@szmarczak/http-timer/dist/source';
 import { Token, F5DownLoad, F5Upload, F5InfoApi } from './bigipModels';
 import { HttpResponse, uuidAxiosRequestConfig, AxiosResponseWithTimings } from "../utils/httpModels";
 import { F5DownloadPaths, F5UploadPaths } from '../constants';
-import { getRandomUUID, wait } from '../utils/misc';
+import { getRandomUUID } from '../utils/misc';
 
 
 
@@ -168,6 +168,7 @@ export class MgmtClient {
                 events.emit('failedAuth', err.response.data);
 
                 clearToken();  // clear the token anyway
+                throw err;  // rethrow error since we failed auth
             }
 
             // Do something with response error
@@ -233,7 +234,7 @@ export class MgmtClient {
      * 
      * @returns request response
      */
-    async makeRequest(uri: string, options?: uuidAxiosRequestConfig): Promise<HttpResponse> {
+    async makeRequest(uri: string, options?: uuidAxiosRequestConfig): Promise<AxiosResponseWithTimings> {
 
         // if auth token has expired, it should have been cleared, get new one
         if (!this._token) {
@@ -369,11 +370,12 @@ export class MgmtClient {
 
 
 
-    async followAsync(url: string): Promise<HttpResponse> {
+    async followAsync(url: string): Promise<AxiosResponseWithTimings> {
 
-        if (!this._token) {
-            await this.getToken();
-        }
+        // todo: add the ability to add even more time for extra long calls for ucs-create/qkview-create/do
+        // todo: potentially make this more generic.  kinda like a generator/iterator contruct
+        //  example: input endpoint, success_criteria and failure criteria (long or short cycle)
+        //      basically: keep calling this endpoint till you get this or this...
 
         //  build async wait array -> progressively waits longer
         //  https://stackoverflow.com/questions/12503146/create-an-array-with-same-element-repeated-multiple-times
@@ -384,7 +386,7 @@ export class MgmtClient {
         // next 30 rounds, wait 30 seconds each (15 minutes total)
         retryTimerArray.push(...Array.from({ length: 30 }, () => 30))
 
-        const responses: HttpResponse[] = [];
+        const responses: AxiosResponseWithTimings[] = [];
         while (retryTimerArray.length > 0) {
 
             // set makeRequest to never throw an error, but keep going till a valid response
@@ -478,14 +480,9 @@ export class MgmtClient {
      * @param fileName file name on bigip
      * @param localDestPathFile where to put the file (including file name)
      * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
+     * **expand/update return value**
      */
-    async download(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<any> {
-
-        // if auth token has expired, it should have been cleared, get new one
-        if (!this._token) {
-            await this.getToken();
-        }
-
+    async download(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<HttpResponse> {
 
         // swap out download url as needed (ternary method)
         const url =
@@ -506,10 +503,9 @@ export class MgmtClient {
             downloadType
         })
 
-        const resp = []
         return new Promise(async (resolve, reject) => {
 
-
+            const downloadResponses: HttpResponse[] = []
             const file = fs.createWriteStream(fileP)
 
             // https://github.com/andrewstart/axios-streaming/blob/master/axios.js
@@ -518,10 +514,16 @@ export class MgmtClient {
             let chunkSize: number = undefined;  // content-lenght
             let totalSize: number = undefined;
             let chunkEnd: number = undefined;
-            let nextChunkEnd: number = undefined
+            let nextChunkEnd: number = undefined;
+            let downloadingMultiPart = false;
 
 
             do {
+
+                // if auth token has expired, it should have been cleared, get new one
+                if (!this._token) {
+                    await this.getToken();
+                }
 
                 const reqObject: uuidAxiosRequestConfig = {
                     headers: {},
@@ -549,40 +551,90 @@ export class MgmtClient {
                             file.write(data);
                         })
 
-                        chunkSize = parseInt(respIn.headers['content-length'])
-                        const contentRange = respIn.headers['content-range'];
-                        chunkEnd = parseInt(contentRange.split('/')[0].split('-')[1])
-                        totalSize = parseInt(contentRange.split('/')[1]);
+                        if (respIn.headers['content-range']) {
+                            downloadingMultiPart = true;    // got a content-range, so downloading a multi-part file
+                            chunkSize = parseInt(respIn.headers['content-length'])
+                            const contentRange = respIn.headers['content-range'];
+                            chunkEnd = parseInt(contentRange.split('/')[0].split('-')[1])
+                            totalSize = parseInt(contentRange.split('/')[1]);
 
-                        if ((chunkEnd + 1) === totalSize) {
-                            // this is the last chunk, so close file write stream when done
-                            respIn.data.on('end', () => {
-                                file.end();
-                            })
+                            if ((chunkEnd + 1) === totalSize) {
+                                // this is the last chunk, so close file write stream when done
+                                respIn.data.on('end', () => {
+                                    file.end();
+                                })
+                            }
+                        } else {
+                            // not multi-part, so pipe contents
+                            respIn.data.pipe(file)
+                        }
+
+                        downloadResponses.push({
+                            headers: respIn.headers,
+                            status: respIn.status,
+                            statusText: respIn.statusText,
+                            request: {
+                                uuid: respIn.config.uuid,
+                                baseURL: respIn.config.baseURL,
+                                url: respIn.config.url,
+                                method: respIn.request.method,
+                                headers: respIn.config.headers,
+                                protocol: respIn.config.httpsAgent.protocol,
+                                timings: respIn.request.timings
+                            }
+                        })
+
+                        if ((chunkEnd + 1) !== totalSize) {
+                            // are we ate the end of our multi-part download?
+                            downloadingMultiPart = false;
+                        }
+                        if (chunkEnd === undefined && totalSize === undefined) {
+                            // we didn't get a multi-part download
+                            chunkEnd = 1
+                            totalSize = 2
+                            downloadingMultiPart = false;
                         }
 
                     })
+                    .catch(err => {
+                        return reject(err);
+                    })
 
             }
-            while ((chunkEnd + 1) !== totalSize);
+            while (downloadingMultiPart);
+
+            // if(!chunkSize) {
+            //     // we didn't set a chunksize so we didn't download multi-part, so return, don't wait for writer to finish
+            //     return downloadResponses;
+            // }
 
             file
                 .on('error', err => {
                     // debugger;
                     return reject(err);
                 })
-                .on('finish', f => {
+                .on('finish', () => {
                     // await new Promise(resolve => { setTimeout(resolve, 3000); });
-                    // setTimeout(resolve, 3000);
-                    return resolve({
-                        data: {
-                            file: file.path,
-                            bytes: file.bytesWritten
-                        }
-                    });
+                    // setTimeout(resolve, 500);
+                    // setTimeout(()=> {''}, 500);
+
+                    // get the last response, append the file data we want and return
+                    const lastResp: HttpResponse = downloadResponses[downloadResponses.length - 1]
+                    lastResp.data = {
+                        file: file.path,
+                        bytes: file.bytesWritten
+                    }
+                    return resolve(lastResp);
+                })
+                .on('close', () => {
+                    debugger;
                 })
         })
-        .then( respond => wait(1000, respond));
+        // .then(async (respond) => {
+        //     // double cast the type as needed
+        //     // await wait(1000)
+        //     return respond;
+        // })
     }
 
 
@@ -602,7 +654,7 @@ export class MgmtClient {
      * @param localDestPathFile where to put the file (including file name)
      * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
      */
-    async downloadOriginal(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<any> {
+    async downloadOriginal(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<unknown> {
 
         // if auth token has expired, it should have been cleared, get new one
         if (!this._token) {
@@ -762,12 +814,7 @@ export class MgmtClient {
      * @param localSourcePathFilename 
      * @param uploadType
      */
-    async upload(localSourcePathFilename: string, uploadType: F5Upload): Promise<HttpResponse> {
-
-        // if auth token has expired, it should have been cleared, get new one
-        if (!this._token) {
-            await this.getToken();
-        }
+    async upload(localSourcePathFilename: string, uploadType: F5Upload): Promise<AxiosResponseWithTimings> {
 
         // array to hold responses
         const responses = [];
@@ -789,6 +836,11 @@ export class MgmtClient {
         })
 
         while (end <= fileStats.size - 1 && start < end) {
+
+            // if auth token has expired, it should have been cleared, get new one
+            if (!this._token) {
+                await this.getToken();
+            }
 
             const resp = await this.makeRequest(url, {
                 method: 'POST',
@@ -858,5 +910,49 @@ export class MgmtClient {
         }
     }
 }
+
+
+/**
+ * returns simplified http response object
+ * 
+ * ```ts
+ *     return {
+ *      data: resp.data,
+ *      headers: resp.headers,
+ *      status: resp.status,
+ *      statusText: resp.statusText,
+ *      request: {
+ *          uuid: resp.config.uuid,
+ *          baseURL: resp.config.baseURL,
+ *          url: resp.config.url,
+ *          method: resp.request.method,
+ *          headers: resp.config.headers,
+ *          protocol: resp.config.httpsAgent.protocol,
+ *          timings: resp.request.timings
+ *      }
+ *  }
+ * ```
+ * @param resp orgininal axios response with timing
+ * @returns simplified http response
+ */
+export async function simplifyHttpResponse(resp: AxiosResponseWithTimings): Promise<HttpResponse> {
+    // only return the things we need
+    return {
+        data: resp.data,
+        headers: resp.headers,
+        status: resp.status,
+        statusText: resp.statusText,
+        request: {
+            uuid: resp.config.uuid,
+            baseURL: resp.config.baseURL,
+            url: resp.config.url,
+            method: resp.request.method,
+            headers: resp.config.headers,
+            protocol: resp.config.httpsAgent.protocol,
+            timings: resp.request.timings
+        }
+    }
+}
+
 
 
