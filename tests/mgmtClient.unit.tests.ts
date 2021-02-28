@@ -20,7 +20,7 @@ import { defaultHost, defaultPassword, defaultUser, getMgmtClient, ipv6Host } fr
 import { getFakeToken } from '../src/utils/testingUtils';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 import { F5DownloadPaths, F5UploadPaths } from '../src/constants';
-import { MgmtClient } from '../src/bigip/mgmtClient';
+import { MgmtClient, simplifyHttpResponse } from '../src/bigip/mgmtClient';
 
 
 // let mgmtClient: mgmtClient;
@@ -39,7 +39,7 @@ const tmp = path.join(tmpDir, rpm)
 
 const nockInst = nock(`https://${defaultHost}`)
 
-let events = [];
+const events = [];
 
 describe('mgmtClient unit tests - successes', function () {
 
@@ -54,6 +54,7 @@ describe('mgmtClient unit tests - successes', function () {
         mgmtClient = getMgmtClient();
 
         // mgmtClient = new MgmtClient('192.168.200.131', 'admin', 'benrocks')
+        // mgmtClient = new MgmtClient('10.200.244.101', 'admin', 'benrocks')
 
         // setup events collection
         mgmtClient.events.on('failedAuth', msg => events.push(msg));
@@ -83,7 +84,7 @@ describe('mgmtClient unit tests - successes', function () {
         // mgmtClient = getMgmtClient();
 
         // clear events
-        events = [];
+        events.length = 0;
 
         // setup auth nock
         nockInst
@@ -96,7 +97,7 @@ describe('mgmtClient unit tests - successes', function () {
     afterEach(async function () {
         // Alert if all our nocks didn't get used, and clear them out
         if (!nock.isDone()) {
-            throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`)
+            // throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`)
         }
         nock.cleanAll();
 
@@ -146,15 +147,32 @@ describe('mgmtClient unit tests - successes', function () {
             defaultHost,
             defaultUser,
             defaultPassword, {
-                port: 495,
-                provider,
-            }
-            
+            port: 495,
+            provider,
+        }
+
         )
 
         let tokenPostBody
         let tokenRespBody
-        
+
+        const request = '/mgmt/tm/sys/clock';
+        const response = {
+            "kind": "tm:sys:clock:clockstats",
+            "selfLink": "https://localhost/mgmt/tm/sys/clock?ver=14.1.2.6",
+            "entries": {
+                "https://localhost/mgmt/tm/sys/clock/0": {
+                    "nestedStats": {
+                        "entries": {
+                            "fullDate": {
+                                "description": "2021-02-13T11:44:02Z"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         nock(`https://${defaultHost}:495`)
             .post('/mgmt/shared/authn/login')
             .reply(200, (uri, reqBody: AuthTokenReqBody) => {
@@ -162,12 +180,12 @@ describe('mgmtClient unit tests - successes', function () {
                 tokenRespBody = getFakeToken(reqBody.username, reqBody.loginProviderName)
                 return tokenRespBody;
             })
-            .get('/foo')
-            .reply(200, { foo: 'bar' });
+            .get(request)
+            .reply(200, response);
 
-        await mgmtClient.makeRequest('/foo')
+        await mgmtClient.makeRequest(request)
             .then(resp => {
-                assert.deepStrictEqual(resp.data, { foo: 'bar' })
+                assert.deepStrictEqual(resp.data, response)
             })
             .catch(err => {
                 debugger;
@@ -184,49 +202,122 @@ describe('mgmtClient unit tests - successes', function () {
     });
 
 
-    it('confirm http response object/structure/details', async function () {
+    it('confirm http response object/structure/details through simplifyHttpReponse', async function () {
+
+        const request = '/mgmt/tm/sys/sshd'
+        const response = {
+            "kind": "tm:sys:sshd:sshdstate",
+            "selfLink": "https://localhost/mgmt/tm/sys/sshd?ver=14.1.2.6",
+            "allow": [
+                "ALL"
+            ],
+            "banner": "disabled",
+            "fipsCipherVersion": 0,
+            "inactivityTimeout": 0,
+            "logLevel": "info",
+            "login": "enabled",
+            "port": 22
+        };
+
         nockInst
-            .get(`/test/1`)
-            .reply(200, { something: 'awesome' } )
+            .get(request)
+            .reply(200, response)
 
-        const resp = await mgmtClient.makeRequest('/test/1')
-        .then( resp => resp )
-        .catch( err => {
-            debugger;
-            return Promise.reject(err)
-        })
+        ///mgmt/tm/sys/clock
 
-        assert.deepStrictEqual(resp.data, { something: 'awesome' })
-        assert.ok(resp.headers)
-        assert.deepStrictEqual(resp.status, 200)
-        // assert.ok(resp.statusText)
-        assert.ok(resp.request.baseURL)
-        assert.ok(resp.request.method)
-        assert.ok(resp.request.headers)
-        assert.ok(resp.request.protocol)
-        assert.ok(resp.request.timings)
-        assert.ok(resp.request.uuid)
-        assert.ok(resp.request.url)
-    });    
+
+        await mgmtClient.makeRequest(request)
+            .then(oResp => simplifyHttpResponse(oResp))
+            .then(resp => {
+                // 
+                assert.ok(resp.data.allow, 'sshd response should have an "allow" object param')
+                assert.ok(resp.data.banner, 'sshd response should have an "banner" object param')
+                assert.ok(resp.headers)
+                assert.deepStrictEqual(resp.status, 200)
+                // assert.ok(resp.statusText)
+                assert.ok(resp.request.baseURL)
+                assert.ok(resp.request.method)
+                assert.ok(resp.request.headers)
+                assert.ok(resp.request.protocol)
+                assert.ok(resp.request.timings)
+                assert.ok(resp.request.uuid)
+                assert.ok(resp.request.url)
+            })
+            .catch(err => {
+                debugger;
+            })
+
+    });
 
 
     it('follow async post/response', async function () {
+
+        // change this to query the installed ilx pacakges
+        // this should provide a quick easy way to test an async call
 
         this.slow(21000);
 
         nockInst
             .get(`/test/1`)
-            .reply(200, { status: 'started->inProgress'} )
+            .reply(200, { status: 'started->inProgress' })
             .get(`/test/1`)
-            .reply(200, { status: 'not yet...'} )
+            .reply(200, { status: 'not yet...' })
             .get(`/test/1`)
-            .reply(200, { status: 'FINISHED'} )
+            .reply(200, { status: 'FINISHED' })
 
         const resp = await mgmtClient.followAsync('/test/1')
 
         assert.deepStrictEqual(resp.data, { status: "FINISHED" })
-    });    
+    });
 
+
+
+    it('upload file to F5 - FILE', async function () {
+        this.slow(600);
+        nockInst
+            // tell the nocks to persist for this test, the following post will get called several times
+            //  for all the pieces of the file
+            .persist()
+
+            // the following just tests that the url was POST'd to, not the file contents
+            //  but since the function returns the filename and file size as part of the upload process
+            //  those should confirm that everthing completed
+            .post(`${F5UploadPaths.file.uri}/${rpm}`)
+            .reply(200, { foo: 'bar' });
+
+
+        const fileStat = fs.statSync(filePath)
+
+        await mgmtClient.upload(filePath, 'FILE')
+            .then(resp => {
+                assert.deepStrictEqual(resp.data.bytes, fileStat.size, 'local source file and uploaded file sizes do not match')
+                assert.deepStrictEqual(resp.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm', 'filename returned should match source file name')
+                // assert.ok(resp.data.bytes);  // just asserting that we got a value here, should be a number
+            })
+            .catch(err => {
+                debugger;
+            });
+    });
+
+    it('upload file to F5 - ISO', async function () {
+        this.slow(600);
+        nockInst
+            .persist()
+            .post(`${F5UploadPaths.iso.uri}/${rpm}`)
+            .reply(200, { foo: 'bar' });
+
+        const fileStat = fs.statSync(filePath);
+
+        await mgmtClient.upload(filePath, 'ISO')
+            .then(resp => {
+                assert.deepStrictEqual(resp.data.bytes, fileStat.size, 'local source file and uploaded file sizes do not match')
+                assert.deepStrictEqual(resp.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
+                // assert.ok(resp.data.bytes);  // just asserting that we got a value here, should be a number
+            })
+            .catch(err => {
+                debugger;
+            })
+    });
 
 
     it('download file from F5 - ISO path', async function () {
@@ -236,10 +327,21 @@ describe('mgmtClient unit tests - successes', function () {
             .get(`${F5DownloadPaths.iso.uri}/${rpm}`)
             .replyWithFile(200, filePath);
 
-        const resp = await mgmtClient.download(rpm, tmp, 'ISO');    // download file
-        // debugger;
-        assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
-        fs.unlinkSync(resp.data.file);                     // remove tmp file
+        const fileStat = fs.statSync(filePath);
+
+        await mgmtClient.download(rpm, tmp, 'ISO')
+            .then(resp => {
+
+                assert.deepStrictEqual(
+                    resp.data.bytes,
+                    fileStat.size,
+                    'local source file and uploaded file sizes do not match')
+                assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
+                fs.unlinkSync(resp.data.file);                     // remove tmp file
+            })
+            .catch(err => {
+                debugger;
+            })
     });
 
 
@@ -250,10 +352,15 @@ describe('mgmtClient unit tests - successes', function () {
             .get(`${F5DownloadPaths.ucs.uri}/${rpm}`)
             .replyWithFile(200, filePath);
 
-        const resp = await mgmtClient.download(rpm, tmp, 'UCS');    // download file
+        await mgmtClient.download(rpm, tmp, 'UCS')
+            .then(resp => {
+                assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
+                fs.unlinkSync(resp.data.file);                     // remove tmp file
+            })
+            .catch(err => {
+                debugger
+            });
 
-        assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
-        fs.unlinkSync(resp.data.file);                     // remove tmp file
     });
 
 
@@ -265,41 +372,17 @@ describe('mgmtClient unit tests - successes', function () {
             .get(`${F5DownloadPaths.qkview.uri}/${rpm}`)
             .replyWithFile(200, filePath);
 
-        const resp = await mgmtClient.download(rpm, tmp, 'QKVIEW');    // download file
-
-        assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
-        fs.unlinkSync(resp.data.file);                     // remove tmp file
+        await mgmtClient.download(rpm, tmp, 'QKVIEW')
+            .then(resp => {
+                assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
+                fs.unlinkSync(resp.data.file);                     // remove tmp file
+            })
+            .catch(err => {
+                debugger
+            });
     });
 
 
-    
-    it('upload file to F5 - FILE', async function () {
-        this.slow(600);
-        nockInst
-            // tell the nocks to persist for this test, the following post will get called several times
-            //  for all the pieces of the file
-            .persist()
 
-            // so the following just tests that the url was POST'd to, not the file contents
-            //  but since the function returns the filename and file size as part of the upload process
-            //  those should confirm that everthing completed
-            .post(`${F5UploadPaths.file.uri}/${rpm}`)
-            .reply(200, { foo: 'bar' });
 
-        const resp = await mgmtClient.upload(filePath, 'FILE');
-        assert.deepStrictEqual(resp.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
-        assert.ok(resp.data.bytes);  // just asserting that we got a value here, should be a number
-    });
-
-    it('upload file to F5 - ISO', async function () {
-        this.slow(600);
-        nockInst
-            .persist()
-            .post(`${F5UploadPaths.iso.uri}/${rpm}`)
-            .reply(200, { foo: 'bar' });
-
-        const resp = await mgmtClient.upload(filePath, 'ISO');
-        assert.deepStrictEqual(resp.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
-        assert.ok(resp.data.bytes);  // just asserting that we got a value here, should be a number
-    });
 });

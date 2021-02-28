@@ -22,6 +22,7 @@ import { F5DownloadPaths, F5UploadPaths } from '../constants';
 import { getRandomUUID } from '../utils/misc';
 
 
+
 /**
  * Used to inject http call timers
  * transport:request: httpsWithTimer
@@ -167,6 +168,7 @@ export class MgmtClient {
                 events.emit('failedAuth', err.response.data);
 
                 clearToken();  // clear the token anyway
+                throw err;  // rethrow error since we failed auth
             }
 
             // Do something with response error
@@ -232,7 +234,7 @@ export class MgmtClient {
      * 
      * @returns request response
      */
-    async makeRequest(uri: string, options?: uuidAxiosRequestConfig): Promise<HttpResponse> {
+    async makeRequest(uri: string, options?: uuidAxiosRequestConfig): Promise<AxiosResponseWithTimings> {
 
         // if auth token has expired, it should have been cleared, get new one
         if (!this._token) {
@@ -251,88 +253,88 @@ export class MgmtClient {
         // merge incoming options into requestDefaults object
         options = Object.assign(requestDefaults, options)
 
-        return await this.axios(options)
-            .then((resp: AxiosResponseWithTimings) => {
+        return await this.axios.request(options)
+        // .then((resp: AxiosResponseWithTimings) => {
 
 
-                // only return the things we need
-                return {
-                    data: resp.data,
-                    headers: resp.headers,
-                    status: resp.status,
-                    statusText: resp.statusText,
-                    request: {
-                        uuid: resp.config.uuid,
-                        baseURL: resp.config.baseURL,
-                        url: resp.config.url,
-                        method: resp.request.method,
-                        headers: resp.config.headers,
-                        protocol: resp.config.httpsAgent.protocol,
-                        timings: resp.request.timings
-                    }
-                }
-            })
-            .catch(err => {
+        //     // only return the things we need
+        //     return {
+        //         data: resp.data,
+        //         headers: resp.headers,
+        //         status: resp.status,
+        //         statusText: resp.statusText,
+        //         request: {
+        //             uuid: resp.config.uuid,
+        //             baseURL: resp.config.baseURL,
+        //             url: resp.config.url,
+        //             method: resp.request.method,
+        //             headers: resp.config.headers,
+        //             protocol: resp.config.httpsAgent.protocol,
+        //             timings: resp.request.timings
+        //         }
+        //     }
+        // })
+        // .catch(err => {
 
-                // todo: rework this to build a singe err-response object to be passed back as an event
+        //     // todo: rework this to build a singe err-response object to be passed back as an event
 
-                // https://github.com/axios/axios#handling-errors
-                if (err.response) {
-                    // The request was made and the server responded with a status code
-                    // that falls out of the range of 2xx
-                    this.events.emit('log-debug', `HTTPS-RESP [${err.response.config.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
+        //     // https://github.com/axios/axios#handling-errors
+        //     if (err.response) {
+        //         // The request was made and the server responded with a status code
+        //         // that falls out of the range of 2xx
+        //         // this.events.emit('log-debug', `HTTPS-RESP [${err.response.config.uuid}]: ${err.response.status} - ${JSON.stringify(err.response.data)}`)
 
-                    // only return the things we need...  we'll see...
-                    return Promise.reject({
-                        data: err.response.data,
-                        headers: err.response.headers,
-                        status: err.response.status,
-                        statusText: err.response.statusText,
-                        request: {
-                            uuid: err.response.config.uuid,
-                            baseURL: err.response.config.baseURL,
-                            url: err.response.config.url,
-                            method: err.request.method,
-                            headers: err.request.headers,
-                            protocol: err.response.config.httpsAgent.protocol,
-                            timings: err.request.timings
-                        }
-                    })
+        //         // only return the things we need...  we'll see...
+        //         return Promise.reject({
+        //             data: err.response.data,
+        //             headers: err.response.headers,
+        //             status: err.response.status,
+        //             statusText: err.response.statusText,
+        //             request: {
+        //                 uuid: err.response.config.uuid,
+        //                 baseURL: err.response.config.baseURL,
+        //                 url: err.response.config.url,
+        //                 method: err.request.method,
+        //                 headers: err.request.headers,
+        //                 protocol: err.response.config.httpsAgent.protocol,
+        //                 timings: err.request.timings
+        //             }
+        //         })
 
-                } else if (err.request) {
+        //     } else if (err.request) {
 
-                    // The request was made but no response was received
-                    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-                    // http.ClientRequest in node.js
-                    this.events.emit('log-error', {
-                        message: 'HTTPS-REQUEST-FAILED',
-                        path: err.request.path,
-                        err: err.message
-                    })
-                    // return Promise.reject(err.request)
+        //         // The request was made but no response was received
+        //         // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+        //         // http.ClientRequest in node.js
+        //         this.events.emit('log-error', {
+        //             message: 'HTTPS-REQUEST-FAILED',
+        //             path: err.request.path,
+        //             err: err.message
+        //         })
+        //         // return Promise.reject(err.request)
 
-                } else {
+        //     } else {
 
-                    // got a lower level (config) failure
-                    // not sure how to test this...
-                    /* istanbul ignore next */
-                    this.events.emit('log-error', {
-                        message: 'HTTPS request failed',
-                        uuid: err.response.config.uuid,
-                        err
-                    })
+        //         // got a lower level (config) failure
+        //         // not sure how to test this...
+        //         /* istanbul ignore next */
+        //         this.events.emit('log-error', {
+        //             message: 'HTTPS request failed',
+        //             uuid: err.response.config.uuid,
+        //             err
+        //         })
 
-                }
-                return Promise.reject(err)
+        //     }
+        //     return Promise.reject(err)
 
-                // thought:  just log the individual situations and have a single reject clause like below
-                // return Promise.reject({
-                //     message: 'HTTPS request failed',
-                //     uuid,
-                //     err
-                // })
+        //     // thought:  just log the individual situations and have a single reject clause like below
+        //     // return Promise.reject({
+        //     //     message: 'HTTPS request failed',
+        //     //     uuid,
+        //     //     err
+        //     // })
 
-            })
+        // })
     }
 
 
@@ -368,11 +370,12 @@ export class MgmtClient {
 
 
 
-    async followAsync(url: string): Promise<HttpResponse> {
+    async followAsync(url: string): Promise<AxiosResponseWithTimings> {
 
-        if (!this._token) {
-            await this.getToken();
-        }
+        // todo: add the ability to add even more time for extra long calls for ucs-create/qkview-create/do
+        // todo: potentially make this more generic.  kinda like a generator/iterator contruct
+        //  example: input endpoint, success_criteria and failure criteria (long or short cycle)
+        //      basically: keep calling this endpoint till you get this or this...
 
         //  build async wait array -> progressively waits longer
         //  https://stackoverflow.com/questions/12503146/create-an-array-with-same-element-repeated-multiple-times
@@ -383,7 +386,7 @@ export class MgmtClient {
         // next 30 rounds, wait 30 seconds each (15 minutes total)
         retryTimerArray.push(...Array.from({ length: 30 }, () => 30))
 
-        const responses: HttpResponse[] = [];
+        const responses: AxiosResponseWithTimings[] = [];
         while (retryTimerArray.length > 0) {
 
             // set makeRequest to never throw an error, but keep going till a valid response
@@ -407,7 +410,7 @@ export class MgmtClient {
 
 
             // todo: break out the successful and failed results, only refresh statusBars on successful
-            if (resp.data?.status === 'FINISHED' ) {
+            if (resp.data?.status === 'FINISHED') {
                 retryTimerArray.length = 0;
             }
 
@@ -445,7 +448,22 @@ export class MgmtClient {
         return response;
     }
 
+    // ##########################################################################
+    // ##########################################################################
+    // ##########################################################################
+    // ##########################################################################
 
+    /**
+     * 
+     * https://support.f5.com/csp/article/K41763344
+     * 
+     * 
+     */
+
+    // ##########################################################################
+    // ##########################################################################
+    // ##########################################################################
+    // ##########################################################################
 
     /**
      * download file from f5 (ucs/qkview/iso)
@@ -462,13 +480,9 @@ export class MgmtClient {
      * @param fileName file name on bigip
      * @param localDestPathFile where to put the file (including file name)
      * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
+     * **expand/update return value**
      */
     async download(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<HttpResponse> {
-
-        // if auth token has expired, it should have been cleared, get new one
-        if (!this._token) {
-            await this.getToken();
-        }
 
         // swap out download url as needed (ternary method)
         const url =
@@ -489,35 +503,296 @@ export class MgmtClient {
             downloadType
         })
 
+        return new Promise(async (resolve, reject) => {
+
+            const downloadResponses: HttpResponse[] = []
+            const file = fs.createWriteStream(fileP)
+
+            // https://github.com/andrewstart/axios-streaming/blob/master/axios.js
+
+
+            let chunkSize: number = undefined;  // content-lenght
+            let totalSize: number = undefined;
+            let chunkEnd: number = undefined;
+            let nextChunkEnd: number = undefined;
+            let downloadingMultiPart = false;
+
+
+            do {
+
+                // if auth token has expired, it should have been cleared, get new one
+                if (!this._token) {
+                    await this.getToken();
+                }
+
+                const reqObject: uuidAxiosRequestConfig = {
+                    headers: {},
+                    responseType: 'stream'
+                }
+
+                nextChunkEnd = chunkEnd + chunkSize;
+
+                if (nextChunkEnd >= totalSize) {
+                    // fix the last chunk end length
+                    nextChunkEnd = (totalSize - 1)
+                }
+
+
+                // total size has a value -> means we got a 206 with range headers
+                if (totalSize) {
+                    reqObject.headers["Content-Range"] = `${chunkEnd + 1}-${nextChunkEnd}/${totalSize}`,
+                        reqObject.headers["Content-Type"] = 'application/octet-stream'
+                }
+
+                await this.makeRequest(url, reqObject)
+                    .then(respIn => {
+
+                        respIn.data.on('data', data => {
+                            file.write(data);
+                        })
+
+                        if (respIn.headers['content-range']) {
+                            downloadingMultiPart = true;    // got a content-range, so downloading a multi-part file
+                            chunkSize = parseInt(respIn.headers['content-length'])
+                            const contentRange = respIn.headers['content-range'];
+                            chunkEnd = parseInt(contentRange.split('/')[0].split('-')[1])
+                            totalSize = parseInt(contentRange.split('/')[1]);
+
+                            if ((chunkEnd + 1) === totalSize) {
+                                // this is the last chunk, so close file write stream when done
+                                respIn.data.on('end', () => {
+                                    file.end();
+                                })
+                            }
+                        } else {
+                            // not multi-part, so pipe contents
+                            respIn.data.pipe(file)
+                        }
+
+                        downloadResponses.push({
+                            headers: respIn.headers,
+                            status: respIn.status,
+                            statusText: respIn.statusText,
+                            request: {
+                                uuid: respIn.config.uuid,
+                                baseURL: respIn.config.baseURL,
+                                url: respIn.config.url,
+                                method: respIn.request.method,
+                                headers: respIn.config.headers,
+                                protocol: respIn.config.httpsAgent.protocol,
+                                timings: respIn.request.timings
+                            }
+                        })
+
+                        if ((chunkEnd + 1) !== totalSize) {
+                            // are we ate the end of our multi-part download?
+                            downloadingMultiPart = false;
+                        }
+                        if (chunkEnd === undefined && totalSize === undefined) {
+                            // we didn't get a multi-part download
+                            chunkEnd = 1
+                            totalSize = 2
+                            downloadingMultiPart = false;
+                        }
+
+                    })
+                    .catch(err => {
+                        return reject(err);
+                    })
+
+            }
+            while (downloadingMultiPart);
+
+            // if(!chunkSize) {
+            //     // we didn't set a chunksize so we didn't download multi-part, so return, don't wait for writer to finish
+            //     return downloadResponses;
+            // }
+
+            file
+                .on('error', err => {
+                    // debugger;
+                    return reject(err);
+                })
+                .on('finish', () => {
+                    // await new Promise(resolve => { setTimeout(resolve, 3000); });
+                    // setTimeout(resolve, 500);
+                    // setTimeout(()=> {''}, 500);
+
+                    // get the last response, append the file data we want and return
+                    const lastResp: HttpResponse = downloadResponses[downloadResponses.length - 1]
+                    lastResp.data = {
+                        file: file.path,
+                        bytes: file.bytesWritten
+                    }
+                    return resolve(lastResp);
+                })
+                .on('close', () => {
+                    debugger;
+                })
+        })
+        // .then(async (respond) => {
+        //     // double cast the type as needed
+        //     // await wait(1000)
+        //     return respond;
+        // })
+    }
+
+
+    /**
+     * download file from f5 (ucs/qkview/iso)
+     * - UCS
+     *   - uri: /mgmt/shared/file-transfer/ucs-downloads/${fileName}
+     *   - path: /var/local/ucs/${fileName}
+     * - QKVIEW
+     *   - uri: /mgmt/cm/autodeploy/qkview-downloads/${fileName}
+     *   - path: /var/tmp/${fileName}
+     * - ISO
+     *   - uri: /mgmt/cm/autodeploy/software-image-downloads/${fileName}
+     *   - path: /shared/images/${fileName}
+     * 
+     * @param fileName file name on bigip
+     * @param localDestPathFile where to put the file (including file name)
+     * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
+     */
+    async downloadOriginal(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<unknown> {
+
+        // if auth token has expired, it should have been cleared, get new one
+        if (!this._token) {
+            await this.getToken();
+        }
+
+
+        // swap out download url as needed (ternary method)
+        const url =
+            downloadType === 'UCS' ? `${F5DownloadPaths.ucs.uri}/${fileName}`
+                : downloadType === 'QKVIEW' ? `${F5DownloadPaths.qkview.uri}/${fileName}`
+                    : `${F5DownloadPaths.iso.uri}/${fileName}`;
+
+        //  if we got a dest path with no filename, append the filename
+        const fileP
+            = path.parse(localDestPath).ext
+                ? localDestPath
+                : `${localDestPath}/${fileName}`;
+
+        // const options: uuidAxiosRequestConfig = {
+        //     baseURL: `https://${this.host}:${this.port}`,
+        //     url,
+        //     httpsAgent: new https.Agent({
+        //         rejectUnauthorized: false,
+        //     }),
+        //     headers: {
+        //         'x-f5-auth-token': this._token.token
+        //     },
+        //     responseType: 'stream'
+        // }
+
+
+        this.events.emit('log-debug', {
+            message: 'pending download',
+            fileName,
+            localDestPath,
+            downloadType
+        })
+
         const writable = fs.createWriteStream(fileP)
+
+        // const resp = await axios.request(options)
+        // resp.data.pipe(writable)
+
+        const resp2 = []
 
         return new Promise(((resolve, reject) => {
 
             this.makeRequest(url, { responseType: 'stream' })
-                .then(resp => {
+                .then(async resp => {
+
+                    await resp2.push(resp);
                     resp.data.pipe(writable)
-                        // .on('finish', resolve)
-                        .on('finish', () => {
+                    // 
+                    let contentRange = resp.headers['content-range']
+                    let contentLength: number = parseInt(resp.headers['content-length'])
+                    const contentEnd = contentRange.split('/').pop();
 
-                            // over-write response data
-                            resp.data = {
-                                file: writable.path,
-                                bytes: writable.bytesWritten
-                            };
+                    contentRange = resp.headers['content-range']
+                    let currentChunkEnd = contentRange.split('/')[0].split('-')[1]
+                    let nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
+                    let nextChunkEnd = (parseInt(currentChunkEnd) + (contentLength));
 
-                            this.events.emit('log-debug', {
-                                message: 'download complete',
-                                data: resp.data
+                    if (resp.status === 206) {
+                        let loopCount = 5;
+
+
+                        while (loopCount > 0) {
+
+                            // next chunk end is bigger than full content lenght, so this is the last chunk
+                            if (nextChunkEnd >= contentEnd) {
+                                // allow our loop to run one more time and set the final data chunk end
+                                loopCount = 0;
+                                // make last chunk end match total size
+                                nextChunkEnd = contentEnd - 1;
+                                // make the content length match the size of the last chuck being called for
+                                contentLength = contentEnd - parseInt(nextChunkStart); //  972,245
+                                debugger;
+                            }
+
+                            await this.makeRequest(url, {
+                                responseType: 'stream',
+                                headers: {
+                                    "Content-Range": `${nextChunkStart}-${nextChunkEnd}/${contentEnd}`,
+                                    // "Content-Length": `${contentLength}`,
+                                    "Content-Type": 'application/octet-stream'
+                                }
                             })
+                                .then(respIn => {
+                                    resp2.push(respIn);
+                                    // resp.data.pipe(respIn);
+                                    contentRange = respIn.headers['content-range']
+                                    currentChunkEnd = contentRange.split('/')[0].split('-')[1]
+                                    nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
+                                    nextChunkEnd = (parseInt(currentChunkEnd) + (contentLength - 1));
 
-                            return resolve(resp);
-                        });
+                                    debugger;
+                                })
+                                .catch(err => {
+                                    resp2.push(err)
+                                    debugger;
+                                })
+                            loopCount - 1;
+                        }
+                        debugger;
+
+                    }
+
+                    if (resp.status === 200) {
+                        debugger;
+                    }
                 })
                 .catch(err => {
                     // look at adding more failure details, like,
                     // was it tcp, dns, dest url problem, write file problem, ...
                     return reject(err)
                 })
+
+            writable
+                .on('finish', () => {
+
+                    // over-write response data
+                    // resp.data = {
+                    //     file: writable.path,
+                    //     bytes: writable.bytesWritten
+                    // };
+
+                    // this.events.emit('log-debug', {
+                    //     message: 'download complete',
+                    //     data: resp.data
+                    // })
+
+                    return resolve(resp2);
+                })
+                .on('error', err => {
+                    debugger;
+                    return reject(err);
+                });
         }));
     }
 
@@ -539,12 +814,7 @@ export class MgmtClient {
      * @param localSourcePathFilename 
      * @param uploadType
      */
-    async upload(localSourcePathFilename: string, uploadType: F5Upload): Promise<HttpResponse> {
-
-        // if auth token has expired, it should have been cleared, get new one
-        if (!this._token) {
-            await this.getToken();
-        }
+    async upload(localSourcePathFilename: string, uploadType: F5Upload): Promise<AxiosResponseWithTimings> {
 
         // array to hold responses
         const responses = [];
@@ -566,6 +836,11 @@ export class MgmtClient {
         })
 
         while (end <= fileStats.size - 1 && start < end) {
+
+            // if auth token has expired, it should have been cleared, get new one
+            if (!this._token) {
+                await this.getToken();
+            }
 
             const resp = await this.makeRequest(url, {
                 method: 'POST',
@@ -635,3 +910,49 @@ export class MgmtClient {
         }
     }
 }
+
+
+/**
+ * returns simplified http response object
+ * 
+ * ```ts
+ *     return {
+ *      data: resp.data,
+ *      headers: resp.headers,
+ *      status: resp.status,
+ *      statusText: resp.statusText,
+ *      request: {
+ *          uuid: resp.config.uuid,
+ *          baseURL: resp.config.baseURL,
+ *          url: resp.config.url,
+ *          method: resp.request.method,
+ *          headers: resp.config.headers,
+ *          protocol: resp.config.httpsAgent.protocol,
+ *          timings: resp.request.timings
+ *      }
+ *  }
+ * ```
+ * @param resp orgininal axios response with timing
+ * @returns simplified http response
+ */
+export async function simplifyHttpResponse(resp: AxiosResponseWithTimings): Promise<HttpResponse> {
+    // only return the things we need
+    return {
+        data: resp.data,
+        headers: resp.headers,
+        status: resp.status,
+        statusText: resp.statusText,
+        request: {
+            uuid: resp.config.uuid,
+            baseURL: resp.config.baseURL,
+            url: resp.config.url,
+            method: resp.request.method,
+            headers: resp.config.headers,
+            protocol: resp.config.httpsAgent.protocol,
+            timings: resp.request.timings
+        }
+    }
+}
+
+
+

@@ -14,6 +14,17 @@ import crypto from 'crypto';
 
 
 /**
+ * delays async response of function
+ * https://stackoverflow.com/questions/38956121/how-to-add-delay-to-promise-inside-then
+ * @param ms time to wait
+ * @param value value to return
+ */
+export function wait<T>(ms: number, value?: T): Promise<T> {
+    return new Promise<T>((resolve) => setTimeout(resolve, ms, value));
+}
+
+
+/**
  * builds a short randon uuid - just for some randomness during testing
  * 
  * @param length
