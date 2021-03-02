@@ -24,6 +24,7 @@ export * from './utils/testingUtils'
 
 // main f5 client
 export * from './bigip/f5Client';
+export * from './bigip/atcVersionsClient';
 
 // re-export all the individual modules
 export * from './bigip/mgmtClient'

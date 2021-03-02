@@ -14,8 +14,9 @@ import fs from 'fs';
 
 import { Asset,  AtcVersions, GitRelease } from "./bigipModels";
 import { ExtHttp } from '../externalHttps';
-import { atcMetaData } from '../constants'
+import { atcMetaData as _atcMetaData } from '../constants'
 import { EventEmitter } from "events";
+import * as _atcVersionsBaseCache from './atcVersions.json';
 
 
 /**
@@ -33,39 +34,57 @@ export class AtcVersionsClient {
      * - also has the cache directory under .cacheDir
      */
     extHttp: ExtHttp;
+
+    /**
+     * event emitter instance for this class
+     */
     events: EventEmitter;
 
     /**
      * ATC meta data including api endpoints, github releases url and main repo url
      */
-    atcMetaData = atcMetaData;
+    atcMetaData = _atcMetaData;
 
     /**
      * base atc version information that comes with the package
      * 
      * *updated with every release of f5-conx-core*
      */
-    atcVersionsBaseCache = require('./atcVersions.json');
+    atcVersionsBaseCache: AtcVersions = _atcVersionsBaseCache;
 
-    lastCheckDate: Date | undefined;
+    /**
+     * date of the last ATC version check
+     */
+    lastCheckDate: Date | string | undefined;
+
     /**
      * atc version cache name/location
      * 
      * '/home/someUser/f5-conx-core/src/bigip/atcVersions.json'
      */
-    atcVersionsFileName = path.join(__dirname, 'atcVersions.json');
+    atcVersionsFileName = 'atcVersions.json';
+    
+    /**
+     * 
+     */
+    cachePath: string;
 
     /**
-     * object containing all the versions/releases/assets information for each ATC service
+     * object containing all the LATEST versions/releases/assets information for each ATC service.
      */
     atcVersions: AtcVersions = {};
 
-    constructor(
-        extHttp: ExtHttp,
+    constructor(options: {
+        extHttp?: ExtHttp,
+        cachePath?: string,
         eventEmitter?: EventEmitter
+    }
     ) {
-        this.extHttp = extHttp;
-        this.events = eventEmitter ? eventEmitter : new EventEmitter;
+        this.extHttp = options.extHttp ? options.extHttp : new ExtHttp();
+
+        this.cachePath = options.cachePath ? path.join(options.cachePath, this.atcVersionsFileName) : this.atcVersionsFileName;
+
+        this.events = options.eventEmitter ? options.eventEmitter : new EventEmitter;
     }
 
 
@@ -86,7 +105,7 @@ export class AtcVersionsClient {
         // is it today?
         if (checkDate === todayDate) {
             // was already checked/refreshed today, so pass cached info
-            this.events.emit('log-info', 'atc release version already checked today, returning cache');
+            this.events.emit('log-info', `atc release version already checked today, returning cache from ${this.cachePath}`);
             return this.atcVersions;
         } else {
             // has not been checked today, refresh
@@ -102,11 +121,12 @@ export class AtcVersionsClient {
 
         try {
             // load atc versions cache
-            const versionFile = fs.readFileSync(this.atcVersionsFileName).toString();
+            const versionFile = fs.readFileSync(this.cachePath).toString();
             this.atcVersions = JSON.parse(versionFile);
         } catch (e) {
             this.events.emit('log-error', `no atc release version metadata found at ${this.atcVersionsFileName}`);
         }
+        return;
     }
 
     /**
@@ -115,13 +135,16 @@ export class AtcVersionsClient {
     private async saveReleaseInfoToCache(): Promise<void> {
         
         try {
+
+            this.events.emit('log-info', `saving atc versions cache to ${this.cachePath}`);
             fs.writeFileSync(
-                this.atcVersionsFileName,
+                this.cachePath,
                 JSON.stringify(this.atcVersions, undefined, 4)
             );
         } catch (e) {
             this.events.emit('log-error', `not able to save atc versions info to ${this.atcVersionsFileName}`);
         }
+        return;
     }
 
     /*

@@ -24,13 +24,7 @@ export type AuthTokenReqBody = {
 export type AtcRelease = {
     version: string,
     id: number,
-    // latest?: boolean,
-    assets: [{
-        id: string,
-        name: string,
-        size: number,
-        browser_download_url: string
-    }]
+    assets: Asset[]
 
 }
 
@@ -53,7 +47,7 @@ export type AtcVersion = {
 };
 
 export type AtcVersions = {
-    lastCheckDate?: Date;
+    lastCheckDate?: Date | string;
     fast?: AtcVersion;
     as3?: AtcVersion;
     do?: AtcVersion;
