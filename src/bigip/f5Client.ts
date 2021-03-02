@@ -12,7 +12,7 @@
 import { EventEmitter } from 'events';
 
 import { AtcInfo, F5InfoApi, F5DownLoad, F5Upload } from "./bigipModels";
-import { HttpResponse, F5HttpRequest } from "../utils/httpModels";
+import { HttpResponse, F5HttpRequest, AxiosResponseWithTimings } from "../utils/httpModels";
 // import { MetadataClient } from "./metadata";
 
 import { MgmtClient } from "./mgmtClient";
@@ -27,7 +27,7 @@ import { AtcMgmtClient } from "./atcMgmtClient";
 
 import localAtcMetadataSdk from './atc_metadata.old.json';
 import { ExtHttp } from '../externalHttps';
-import { TMP_DIR, atcMetaDataCloudUrl, atcMetaData as atcMetaDataNew } from '../constants'
+import { TMP_DIR, atcMetaData as atcMetaDataNew } from '../constants'
 import path from 'path';
 
 
@@ -126,7 +126,7 @@ export class F5Client {
      * 
      * @returns request response
      */
-    async https(uri: string, options?: F5HttpRequest): Promise<HttpResponse> {
+    async https(uri: string, options?: F5HttpRequest): Promise<AxiosResponseWithTimings> {
         return await this.mgmtClient.makeRequest(uri, options)
     }
 
@@ -238,7 +238,7 @@ export class F5Client {
      * @param localSourcePathFilename 
      * @param uploadType
      */
-    async upload(localSourcePathFilename: string, uploadType: F5Upload): Promise<HttpResponse> {
+    async upload(localSourcePathFilename: string, uploadType: F5Upload): Promise<AxiosResponseWithTimings> {
         return this.mgmtClient.upload(localSourcePathFilename, uploadType)
     }
 
@@ -260,6 +260,7 @@ export class F5Client {
      * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
      */
     async download(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<HttpResponse> {
+        // todo: update response typeing to include http details
         return this.mgmtClient.download(fileName, localDestPath, downloadType)
     }
 
@@ -271,13 +272,13 @@ export class F5Client {
 
 
 
-    /**
-     * refresh/get latest ATC metadata from cloud
-     * 
-     * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
-     * todo: refresh this file with every packages release via git actions or package.json script
-     */
-    async refreshMetaData(): Promise<HttpResponse> {
-        return await this.extHttp.makeRequest({ url: atcMetaDataCloudUrl })
-    }
+    // /**
+    //  * refresh/get latest ATC metadata from cloud
+    //  * 
+    //  * https://cdn.f5.com/product/cloudsolutions/f5-extension-metadata/latest/metadata.json
+    //  * todo: refresh this file with every packages release via git actions or package.json script
+    //  */
+    // async refreshMetaData(): Promise<AxiosResponseWithTimings> {
+    //     return await this.extHttp.makeRequest({ url: atcMetaDataCloudUrl })
+    // }
 }

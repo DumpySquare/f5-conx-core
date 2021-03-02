@@ -94,11 +94,13 @@ describe('f5Client rpm mgmt integration tests', function () {
 
         // These next two tests are focused on regular external download capability, this test just downloads a file from an external resource, the next test is the same test, but it should see that the file is already locally cached and return it
 
-        const nockScopeGit = nock(`https://test.io`)
-        const url = 'https://test.io/someDir/download/test/package1.rpm'
-        
+        const url = 'https://github.com/F5Networks/f5-appsvcs-templates/releases/download/v1.4.0/f5-appsvcs-templates-1.4.0-1.noarch.rpm'
         const urlPath = new URL(url).pathname       // extract path from URL
         const fileName = path.basename(urlPath);    // get file name from url
+        
+        // const nockScopeGit = nock(`https://test.io`)
+        // const url = 'https://test.io/someDir/download/test/package1.rpm'
+        const nockScopeGit = nock(`https://github.com`)
         
         nockScopeGit
             .get(urlPath)
