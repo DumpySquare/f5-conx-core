@@ -54,7 +54,7 @@ describe('mgmtClient unit tests - successes', function () {
         mgmtClient = getMgmtClient();
 
         // mgmtClient = new MgmtClient('192.168.200.131', 'admin', 'benrocks')
-        // mgmtClient = new MgmtClient('10.200.244.101', 'admin', 'benrocks')
+        mgmtClient = new MgmtClient('10.200.244.101', 'admin', 'benrocks')
 
         // setup events collection
         mgmtClient.events.on('failedAuth', msg => events.push(msg));
@@ -320,6 +320,27 @@ describe('mgmtClient unit tests - successes', function () {
     });
 
 
+    it('upload file to F5 - UCS', async function () {
+        this.slow(600);
+        nockInst
+            .persist()
+            .post(`${F5UploadPaths.ucs.uri}/${rpm}`)
+            .reply(200, { foo: 'bar' });
+
+        const fileStat = fs.statSync(filePath);
+
+        await mgmtClient.upload(filePath, 'UCS')
+            .then(resp => {
+                assert.deepStrictEqual(resp.data.bytes, fileStat.size, 'local source file and uploaded file sizes do not match')
+                assert.deepStrictEqual(resp.data.fileName, 'f5-appsvcs-templates-1.4.0-1.noarch.rpm')
+                // assert.ok(resp.data.bytes);  // just asserting that we got a value here, should be a number
+            })
+            .catch(err => {
+                debugger;
+            })
+    });
+
+
     it('download file from F5 - ISO path', async function () {
         this.slow(200);
         nockInst
@@ -366,13 +387,15 @@ describe('mgmtClient unit tests - successes', function () {
 
     it('download file from F5 - qkview path', async function () {
         this.slow(200);
-        nockInst
 
+        const rpm_base = path.parse(rpm).base;
+
+        nockInst
             .persist()
-            .get(`${F5DownloadPaths.qkview.uri}/${rpm}`)
+            .get(`${F5DownloadPaths.qkview.uri}/${rpm_base}.qkview`)
             .replyWithFile(200, filePath);
 
-        await mgmtClient.download(rpm, tmp, 'QKVIEW')
+        await mgmtClient.download(`${rpm_base}.qkview`, tmp, 'QKVIEW')
             .then(resp => {
                 assert.ok(fs.existsSync(resp.data.file))           // confirm/assert file is there
                 fs.unlinkSync(resp.data.file);                     // remove tmp file

@@ -8,21 +8,22 @@
 
 'use strict';
 
-import { TsMetaData, AtcInfo } from "./bigipModels";
+import { AtcInfo } from "./bigipModels";
+import { atcMetaData } from '../constants'
 import { MgmtClient } from "./mgmtClient";
 
 export class TsClient {
     mgmtClient: MgmtClient;
-    metaData: TsMetaData;
+    metaData: typeof atcMetaData.ts;
     version: AtcInfo;
     
     constructor (
         versions: AtcInfo,
-        metaData: TsMetaData,
+        tsMetaData: typeof atcMetaData.ts,
         mgmtClient: MgmtClient
     ) {
         this.version = versions;
-        this.metaData = metaData;
+        this.metaData = tsMetaData;
         this.mgmtClient = mgmtClient;
     }
 

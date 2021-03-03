@@ -61,6 +61,7 @@ describe('f5Client qkview integration tests - ipv6', function () {
         f5Client = getF5Client({ ipv6: true });
 
         // f5Client = new F5Client('192.168.200.131', 'admin', 'benrocks')
+        f5Client = new F5Client('10.200.244.101', 'admin', 'benrocks')
 
         f5Client.events.on('failedAuth', msg => events.push(msg));
         f5Client.events.on('log-debug', msg => events.push(msg));

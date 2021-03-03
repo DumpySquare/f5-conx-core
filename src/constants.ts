@@ -122,5 +122,9 @@ export const F5UploadPaths = {
     file: {
         uri: '/mgmt/shared/file-transfer/uploads',
         path: '/var/config/rest/downloads'
+    },
+    ucs: {
+        uri: '/mgmt/shared/file-transfer/ucs-uploads',
+        path: '/var/local/ucs'
     }
 }

@@ -26,6 +26,8 @@ export class As3Client {
     // the followin endpoints should be tied back into the metadata so it can be dynamic with versions
     // public readonly taskEndpoint = `/mgmt/shared/appsvcs/task`
     // public readonly declareEndpoint = `/mgmt/shared/appsvcs/declare`
+
+    metaData: typeof atcMetaData.as3;
     /**
      * AS3 service version information
      */
@@ -53,9 +55,11 @@ export class As3Client {
 
     constructor(
         versions: AtcInfo,
+        as3MetaData: typeof atcMetaData.as3,
         mgmtClient: MgmtClient
     ) {
         this.version = versions;
+        this.metaData = as3MetaData;
         this.mgmtClient = mgmtClient;
     }
 

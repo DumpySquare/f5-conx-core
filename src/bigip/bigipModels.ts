@@ -79,7 +79,7 @@ export type F5DownLoad = 'UCS' | 'QKVIEW' | 'ISO'
  *  - uri: '/mgmt/cm/autodeploy/software-image-uploads'
  *  - path: '/shared/images'
  */
-export type F5Upload = 'ISO' | 'FILE'
+export type F5Upload = 'ISO' | 'FILE' | 'UCS'
 
 
 

@@ -98,6 +98,8 @@ export class AtcMgmtClient {
      */
     async uploadRpm(rpm: string): Promise<HttpResponse> {
 
+        this.mgmtClient.events.emit('log-info', `uploading atc rpm: ${rpm}`);
+
         return await this.mgmtClient.upload(rpm, 'FILE')
 
     }
@@ -108,6 +110,8 @@ export class AtcMgmtClient {
      * @param rpmName 
      */
     async install(rpmName: string): Promise<HttpResponse> {
+
+        this.mgmtClient.events.emit('log-info', `installing atc rpm: ${rpmName}`)
 
         return await this.mgmtClient.makeRequest(iControlEndpoints.atcPackageMgmt, {
             method: 'POST',
@@ -120,7 +124,11 @@ export class AtcMgmtClient {
                 // this will follow the rpm install process till it completes, but we need to follow this with another async to wait till the service endpoints become available, which typically requires a service restart of restjavad/restnoded
                 const waitTillReady = await this.mgmtClient.followAsync(`${iControlEndpoints.atcPackageMgmt}/${resp.data.id}`)
 
-                await new Promise(resolve => { setTimeout(resolve, 1000); });
+                // await this.watchAtcRestart();
+
+                this.mgmtClient.events.emit('log-info', `installing atc rpm job complete, waiting for services to restart (~30 seconds)`);
+
+                await new Promise(resolve => { setTimeout(resolve, 30000); });
 
                 // figure out what atc service we installed, via rpmName?
                 // then poll that atc service endpoint (info) till it returns a version
@@ -136,6 +144,8 @@ export class AtcMgmtClient {
      * shows installed atc ilx rpms on f5
      */
     async showInstalled(): Promise<HttpResponse> {
+
+        this.mgmtClient.events.emit('log-info', `gathering installed atc rpms`);
 
         return await this.mgmtClient.makeRequest(iControlEndpoints.atcPackageMgmt, {
             method: 'POST',
@@ -162,6 +172,8 @@ export class AtcMgmtClient {
 
         // https://support.f5.com/csp/article/K51226856
 
+        this.mgmtClient.events.emit('log-info', `un-installing atc rpm: ${packageName}`);
+
         return await this.mgmtClient.makeRequest(iControlEndpoints.atcPackageMgmt, {
             method: 'POST',
             data: {
@@ -172,7 +184,12 @@ export class AtcMgmtClient {
             .then(async resp => {
                 // for uninstall operations, this is just gonna have to work
                 const awaitServiceRestart: HttpResponse = await this.mgmtClient.followAsync(`${iControlEndpoints.atcPackageMgmt}/${resp.data.id}`)
-                await new Promise(resolve => { setTimeout(resolve, 5000); });
+
+                // await this.watchAtcRestart();
+                
+                this.mgmtClient.events.emit('log-info', `un-installing atc rpm job complete, waiting for services to restart (~30 seconds)`);
+  
+                await new Promise(resolve => { setTimeout(resolve, 30000); });
 
                 // check if atc services restarted and append thier responses when complete
                 // awaitServiceRestart.async.push(await this.mgmtClient.followAsync('/mgmt/tm/sys/service/restnoded/stats'))
@@ -195,7 +212,7 @@ export class AtcMgmtClient {
         const restjavad = await this.mgmtClient.followAsync('/mgmt/tm/sys/service/restjavad/stats')
 
         // capture restart information and inject into calling function http response for visibility
-        return { restnoded, restjavad};
+        return { restnoded, restjavad };
     }
 
 }

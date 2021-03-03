@@ -72,14 +72,15 @@ export class MgmtClient {
         options?: {
             port?: number,
             provider?: string,
-        }
+        },
+        eventEmitter?: EventEmitter
     ) {
         this.host = host;
         this._user = user;
         this._password = password;
         this.port = options?.port || 443;
         this._provider = options?.provider || 'tmos';
-        this.events = new EventEmitter;
+        this.events = eventEmitter ? eventEmitter : new EventEmitter;
         this.axios = this.createAxiosInstance();
     }
 
@@ -112,11 +113,11 @@ export class MgmtClient {
             httpsAgent: new https.Agent({
                 rejectUnauthorized: false,
             }),
-            headers: {
-                'content-type': 'application/json'
-            },
-            transport
         }
+        // transport
+        // headers: {
+        //     'content-type': 'application/json'
+        // },
 
 
         // create axsios instance
@@ -135,7 +136,6 @@ export class MgmtClient {
             // adjust tcp timeout, default=0, which relys on host system
             config.timeout = Number(process.env.F5_CONX_CORE_TCP_TIMEOUT);
 
-            // config.uuid = getRandomUUID(4, { simple: true })
             config.uuid = config?.uuid ? config.uuid : getRandomUUID(4, { simple: true })
 
             events.emit('log-info', `HTTPS-REQU [${config.uuid}]: ${config.method} -> ${config.baseURL}${config.url}`)
@@ -520,11 +520,6 @@ export class MgmtClient {
 
             do {
 
-                // if auth token has expired, it should have been cleared, get new one
-                if (!this._token) {
-                    await this.getToken();
-                }
-
                 const reqObject: uuidAxiosRequestConfig = {
                     headers: {},
                     responseType: 'stream'
@@ -540,14 +535,14 @@ export class MgmtClient {
 
                 // total size has a value -> means we got a 206 with range headers
                 if (totalSize) {
-                    reqObject.headers["Content-Range"] = `${chunkEnd + 1}-${nextChunkEnd}/${totalSize}`,
-                        reqObject.headers["Content-Type"] = 'application/octet-stream'
+                    reqObject.headers["content-range"] = `${chunkEnd + 1}-${nextChunkEnd}/${totalSize}`,
+                        reqObject.headers["content-type"] = 'application/octet-stream'
                 }
 
                 await this.makeRequest(url, reqObject)
                     .then(respIn => {
 
-                        respIn.data.on('data', data => {
+                        respIn.data.on('data', (data: unknown) => {
                             file.write(data);
                         })
 
@@ -560,14 +555,15 @@ export class MgmtClient {
 
                             if ((chunkEnd + 1) === totalSize) {
                                 // this is the last chunk, so close file write stream when done
-                                respIn.data.on('end', () => {
-                                    file.end();
-                                })
+                                // respIn.data.on('end', () => {
+                                // })
+                                file.end();
                             }
-                        } else {
-                            // not multi-part, so pipe contents
-                            respIn.data.pipe(file)
+                            // } else {
+                            //     // not multi-part, so pipe contents
+                            //     respIn.data.pipe(file)
                         }
+
 
                         downloadResponses.push({
                             headers: respIn.headers,
@@ -584,7 +580,7 @@ export class MgmtClient {
                             }
                         })
 
-                        if ((chunkEnd + 1) !== totalSize) {
+                        if ((chunkEnd + 1) === totalSize) {
                             // are we ate the end of our multi-part download?
                             downloadingMultiPart = false;
                         }
@@ -614,9 +610,10 @@ export class MgmtClient {
                     return reject(err);
                 })
                 .on('finish', () => {
-                    // await new Promise(resolve => { setTimeout(resolve, 3000); });
-                    // setTimeout(resolve, 500);
-                    // setTimeout(()=> {''}, 500);
+
+                    // await new Promise(resolve => { setTimeout(resolve, 1000); });
+
+
 
                     // get the last response, append the file data we want and return
                     const lastResp: HttpResponse = downloadResponses[downloadResponses.length - 1]
@@ -624,10 +621,14 @@ export class MgmtClient {
                         file: file.path,
                         bytes: file.bytesWritten
                     }
+
+                    this.events.emit('log-debug', {
+                        message: 'download complete',
+                        file: file.path,
+                        bytes: file.bytesWritten
+                    })
+
                     return resolve(lastResp);
-                })
-                .on('close', () => {
-                    debugger;
                 })
         })
         // .then(async (respond) => {
@@ -638,165 +639,172 @@ export class MgmtClient {
     }
 
 
-    /**
-     * download file from f5 (ucs/qkview/iso)
-     * - UCS
-     *   - uri: /mgmt/shared/file-transfer/ucs-downloads/${fileName}
-     *   - path: /var/local/ucs/${fileName}
-     * - QKVIEW
-     *   - uri: /mgmt/cm/autodeploy/qkview-downloads/${fileName}
-     *   - path: /var/tmp/${fileName}
-     * - ISO
-     *   - uri: /mgmt/cm/autodeploy/software-image-downloads/${fileName}
-     *   - path: /shared/images/${fileName}
-     * 
-     * @param fileName file name on bigip
-     * @param localDestPathFile where to put the file (including file name)
-     * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
-     */
-    async downloadOriginal(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<unknown> {
+    // /**
+    //  * download file from f5 (ucs/qkview/iso)
+    //  * - UCS
+    //  *   - uri: /mgmt/shared/file-transfer/ucs-downloads/${fileName}
+    //  *   - path: /var/local/ucs/${fileName}
+    //  * - QKVIEW
+    //  *   - uri: /mgmt/cm/autodeploy/qkview-downloads/${fileName}
+    //  *   - path: /var/tmp/${fileName}
+    //  * - ISO
+    //  *   - uri: /mgmt/cm/autodeploy/software-image-downloads/${fileName}
+    //  *   - path: /shared/images/${fileName}
+    //  * 
+    //  * @param fileName file name on bigip
+    //  * @param localDestPathFile where to put the file (including file name)
+    //  * @param downloadType: type F5DownLoad = "UCS" | "QKVIEW" | "ISO"
+    //  */
+    // async downloadOriginal(fileName: string, localDestPath: string, downloadType: F5DownLoad): Promise<unknown> {
 
-        // if auth token has expired, it should have been cleared, get new one
-        if (!this._token) {
-            await this.getToken();
-        }
-
-
-        // swap out download url as needed (ternary method)
-        const url =
-            downloadType === 'UCS' ? `${F5DownloadPaths.ucs.uri}/${fileName}`
-                : downloadType === 'QKVIEW' ? `${F5DownloadPaths.qkview.uri}/${fileName}`
-                    : `${F5DownloadPaths.iso.uri}/${fileName}`;
-
-        //  if we got a dest path with no filename, append the filename
-        const fileP
-            = path.parse(localDestPath).ext
-                ? localDestPath
-                : `${localDestPath}/${fileName}`;
-
-        // const options: uuidAxiosRequestConfig = {
-        //     baseURL: `https://${this.host}:${this.port}`,
-        //     url,
-        //     httpsAgent: new https.Agent({
-        //         rejectUnauthorized: false,
-        //     }),
-        //     headers: {
-        //         'x-f5-auth-token': this._token.token
-        //     },
-        //     responseType: 'stream'
-        // }
+    //     // if auth token has expired, it should have been cleared, get new one
+    //     if (!this._token) {
+    //         await this.getToken();
+    //     }
 
 
-        this.events.emit('log-debug', {
-            message: 'pending download',
-            fileName,
-            localDestPath,
-            downloadType
-        })
+    //     // swap out download url as needed (ternary method)
+    //     const url =
+    //         downloadType === 'UCS' ? `${F5DownloadPaths.ucs.uri}/${fileName}`
+    //             : downloadType === 'QKVIEW' ? `${F5DownloadPaths.qkview.uri}/${fileName}`
+    //                 : `${F5DownloadPaths.iso.uri}/${fileName}`;
 
-        const writable = fs.createWriteStream(fileP)
+    //     //  if we got a dest path with no filename, append the filename
+    //     const fileP
+    //         = path.parse(localDestPath).ext
+    //             ? localDestPath
+    //             : `${localDestPath}/${fileName}`;
 
-        // const resp = await axios.request(options)
-        // resp.data.pipe(writable)
-
-        const resp2 = []
-
-        return new Promise(((resolve, reject) => {
-
-            this.makeRequest(url, { responseType: 'stream' })
-                .then(async resp => {
-
-                    await resp2.push(resp);
-                    resp.data.pipe(writable)
-                    // 
-                    let contentRange = resp.headers['content-range']
-                    let contentLength: number = parseInt(resp.headers['content-length'])
-                    const contentEnd = contentRange.split('/').pop();
-
-                    contentRange = resp.headers['content-range']
-                    let currentChunkEnd = contentRange.split('/')[0].split('-')[1]
-                    let nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
-                    let nextChunkEnd = (parseInt(currentChunkEnd) + (contentLength));
-
-                    if (resp.status === 206) {
-                        let loopCount = 5;
+    //     // const options: uuidAxiosRequestConfig = {
+    //     //     baseURL: `https://${this.host}:${this.port}`,
+    //     //     url,
+    //     //     httpsAgent: new https.Agent({
+    //     //         rejectUnauthorized: false,
+    //     //     }),
+    //     //     headers: {
+    //     //         'x-f5-auth-token': this._token.token
+    //     //     },
+    //     //     responseType: 'stream'
+    //     // }
 
 
-                        while (loopCount > 0) {
+    //     this.events.emit('log-debug', {
+    //         message: 'pending download',
+    //         fileName,
+    //         localDestPath,
+    //         downloadType
+    //     })
 
-                            // next chunk end is bigger than full content lenght, so this is the last chunk
-                            if (nextChunkEnd >= contentEnd) {
-                                // allow our loop to run one more time and set the final data chunk end
-                                loopCount = 0;
-                                // make last chunk end match total size
-                                nextChunkEnd = contentEnd - 1;
-                                // make the content length match the size of the last chuck being called for
-                                contentLength = contentEnd - parseInt(nextChunkStart); //  972,245
-                                debugger;
-                            }
+    //     const writable = fs.createWriteStream(fileP)
 
-                            await this.makeRequest(url, {
-                                responseType: 'stream',
-                                headers: {
-                                    "Content-Range": `${nextChunkStart}-${nextChunkEnd}/${contentEnd}`,
-                                    // "Content-Length": `${contentLength}`,
-                                    "Content-Type": 'application/octet-stream'
-                                }
-                            })
-                                .then(respIn => {
-                                    resp2.push(respIn);
-                                    // resp.data.pipe(respIn);
-                                    contentRange = respIn.headers['content-range']
-                                    currentChunkEnd = contentRange.split('/')[0].split('-')[1]
-                                    nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
-                                    nextChunkEnd = (parseInt(currentChunkEnd) + (contentLength - 1));
+    //     // const resp = await axios.request(options)
+    //     // resp.data.pipe(writable)
 
-                                    debugger;
-                                })
-                                .catch(err => {
-                                    resp2.push(err)
-                                    debugger;
-                                })
-                            loopCount - 1;
-                        }
-                        debugger;
+    //     const resp2 = []
 
-                    }
+    //     return new Promise(((resolve, reject) => {
 
-                    if (resp.status === 200) {
-                        debugger;
-                    }
-                })
-                .catch(err => {
-                    // look at adding more failure details, like,
-                    // was it tcp, dns, dest url problem, write file problem, ...
-                    return reject(err)
-                })
+    //         this.makeRequest(url, { responseType: 'stream' })
+    //             .then(async resp => {
 
-            writable
-                .on('finish', () => {
+    //                 await resp2.push(resp);
+    //                 resp.data.pipe(writable)
+    //                 // 
+    //                 let contentRange = resp.headers['content-range']
+    //                 let contentLength: number = parseInt(resp.headers['content-length'])
+    //                 const contentEnd = contentRange.split('/').pop();
 
-                    // over-write response data
-                    // resp.data = {
-                    //     file: writable.path,
-                    //     bytes: writable.bytesWritten
-                    // };
+    //                 contentRange = resp.headers['content-range']
+    //                 let currentChunkEnd = contentRange.split('/')[0].split('-')[1]
+    //                 let nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
+    //                 let nextChunkEnd = (parseInt(currentChunkEnd) + (contentLength));
 
-                    // this.events.emit('log-debug', {
-                    //     message: 'download complete',
-                    //     data: resp.data
-                    // })
-
-                    return resolve(resp2);
-                })
-                .on('error', err => {
-                    debugger;
-                    return reject(err);
-                });
-        }));
-    }
+    //                 if (resp.status === 206) {
+    //                     let loopCount = 5;
 
 
+    //                     while (loopCount > 0) {
+
+    //                         // next chunk end is bigger than full content lenght, so this is the last chunk
+    //                         if (nextChunkEnd >= contentEnd) {
+    //                             // allow our loop to run one more time and set the final data chunk end
+    //                             loopCount = 0;
+    //                             // make last chunk end match total size
+    //                             nextChunkEnd = contentEnd - 1;
+    //                             // make the content length match the size of the last chuck being called for
+    //                             contentLength = contentEnd - parseInt(nextChunkStart); //  972,245
+    //                             debugger;
+    //                         }
+
+    //                         await this.makeRequest(url, {
+    //                             responseType: 'stream',
+    //                             headers: {
+    //                                 "Content-Range": `${nextChunkStart}-${nextChunkEnd}/${contentEnd}`,
+    //                                 // "Content-Length": `${contentLength}`,
+    //                                 "Content-Type": 'application/octet-stream'
+    //                             }
+    //                         })
+    //                             .then(respIn => {
+    //                                 resp2.push(respIn);
+    //                                 // resp.data.pipe(respIn);
+    //                                 contentRange = respIn.headers['content-range']
+    //                                 currentChunkEnd = contentRange.split('/')[0].split('-')[1]
+    //                                 nextChunkStart = (parseInt(currentChunkEnd) + 1).toString();
+    //                                 nextChunkEnd = (parseInt(currentChunkEnd) + (contentLength - 1));
+
+    //                                 debugger;
+    //                             })
+    //                             .catch(err => {
+    //                                 resp2.push(err)
+    //                                 debugger;
+    //                             })
+    //                         loopCount - 1;
+    //                     }
+    //                     debugger;
+
+    //                 }
+
+    //                 if (resp.status === 200) {
+    //                     debugger;
+    //                 }
+    //             })
+    //             .catch(err => {
+    //                 // look at adding more failure details, like,
+    //                 // was it tcp, dns, dest url problem, write file problem, ...
+    //                 return reject(err)
+    //             })
+
+    //         writable
+    //             .on('finish', () => {
+
+    //                 // over-write response data
+    //                 // resp.data = {
+    //                 //     file: writable.path,
+    //                 //     bytes: writable.bytesWritten
+    //                 // };
+
+    //                 // this.events.emit('log-debug', {
+    //                 //     message: 'download complete',
+    //                 //     data: resp.data
+    //                 // })
+
+    //                 return resolve(resp2);
+    //             })
+    //             .on('error', err => {
+    //                 debugger;
+    //                 return reject(err);
+    //             });
+    //     }));
+    // }
+
+    //  * https://www.devcentral.f5.com/s/articles/Tinkering-with-the-BIGREST-Python-SDK-Part-2
+    // Description          Method  URI                                             File Location
+    // Upload Image         POST    /mgmt/cm/autodeploy/sotfware-image-uploads/*    /shared/images
+    // Upload File          POST    /mgmt/shared/file-transfer/uploads/*            /var/config/rest/downloads
+    // Upload UCS           POST    /mgmt/shared/file-transfer/ucs-uploads/*        /var/local/ucs
+
+    // Download UCS         GET     /mgmt/shared/file-transfer/ucs-downloads/*      /var/local/ucs
+    // Download Image/File  GET     /mgmt/cm/autodeploy/sotfware-image-downloads/*  /shared/images
 
     /**
      * upload file to f5 -> used for ucs/ilx-rpms/.conf-merges
@@ -808,9 +816,13 @@ export class MgmtClient {
      * - ISO
      *  - uri: '/mgmt/cm/autodeploy/software-image-uploads'
      *  - path: '/shared/images'
+     * - UCS
+     *  - uri: '/mgmt/shared/file-transfer/ucs-uploads/'
+     *  - path: '/var/local/ucs'
      * 
      * https://devcentral.f5.com/s/articles/demystifying-icontrol-rest-part-5-transferring-files
      * https://support.f5.com/csp/article/K41763344
+     * https://www.devcentral.f5.com/s/articles/Tinkering-with-the-BIGREST-Python-SDK-Part-2
      * @param localSourcePathFilename 
      * @param uploadType
      */
@@ -820,14 +832,14 @@ export class MgmtClient {
         const responses = [];
         const fileName = path.parse(localSourcePathFilename).base;
         const fileStats = fs.statSync(localSourcePathFilename);
-        const chunkSize = 512 * 1024;
+        const chunkSize = 1024 * 1024;
         let start = 0;
         let end = Math.min(chunkSize, fileStats.size - 1);
 
         const url =
-            uploadType === 'FILE'
-                ? `${F5UploadPaths.file.uri}/${fileName}`
-                : `${F5UploadPaths.iso.uri}/${fileName}`;
+            uploadType === 'FILE' ? `${F5UploadPaths.file.uri}/${fileName}`
+                : uploadType === 'ISO' ? `${F5UploadPaths.iso.uri}/${fileName}`
+                    : `${F5UploadPaths.ucs.uri}/${fileName}`;
 
         this.events.emit('log-debug', {
             message: 'pending upload',
@@ -836,11 +848,6 @@ export class MgmtClient {
         })
 
         while (end <= fileStats.size - 1 && start < end) {
-
-            // if auth token has expired, it should have been cleared, get new one
-            if (!this._token) {
-                await this.getToken();
-            }
 
             const resp = await this.makeRequest(url, {
                 method: 'POST',

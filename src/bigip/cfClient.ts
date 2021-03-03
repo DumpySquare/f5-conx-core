@@ -9,22 +9,23 @@
 
 'use strict';
 
-import { CfMetaData, AtcInfo } from "./bigipModels";
+import { AtcInfo } from "./bigipModels";
+import { atcMetaData } from '../constants';
 import { MgmtClient } from "./mgmtClient";
 
 
 export class CfClient {
     mgmtClient: MgmtClient;
-    metaData: CfMetaData;
+    metaData: typeof atcMetaData.cf;
     version: AtcInfo;
 
     constructor(
         versions: AtcInfo,
-        metaData: CfMetaData,
+        cfMetaData: typeof atcMetaData.cf,
         mgmtClient: MgmtClient
     ) {
         this.version = versions;
-        this.metaData = metaData;
+        this.metaData = cfMetaData;
         this.mgmtClient = mgmtClient;
     }
 

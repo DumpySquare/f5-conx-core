@@ -9,22 +9,23 @@
 
 'use strict';
 
-import { As3MetaData, AtcInfo } from "./bigipModels";
+import { AtcInfo } from "./bigipModels";
+import { atcMetaData } from '../constants'
 import { MgmtClient } from "./mgmtClient";
 
 
 export class DoClient {
     mgmtClient: MgmtClient;
-    metaData: As3MetaData;
+    metaData: typeof atcMetaData.do;
     version: AtcInfo;
 
     constructor(
         versions: AtcInfo,
-        metaData: As3MetaData,
+        doMetaData: typeof atcMetaData.do,
         mgmtClient: MgmtClient
     ) {
         this.version = versions;
-        this.metaData = metaData;
+        this.metaData = doMetaData;
         this.mgmtClient = mgmtClient;
     }
 

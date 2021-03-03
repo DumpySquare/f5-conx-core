@@ -9,22 +9,23 @@
 
 'use strict';
 
-import { FastMetaData, AtcInfo } from "./bigipModels";
+import { AtcInfo } from "./bigipModels";
+import { atcMetaData } from '../constants';
 import { MgmtClient } from "./mgmtClient";
 
 
 export class FastClient {
     mgmtClient: MgmtClient;
-    metaData: FastMetaData;
+    metaData: typeof atcMetaData.fast;
     version: AtcInfo;
 
     constructor(
         versions: AtcInfo,
-        metaData: FastMetaData,
+        fastMetaData: typeof atcMetaData.fast,
         mgmtClient: MgmtClient
     ) {
         this.version = versions;
-        this.metaData = metaData;
+        this.metaData = fastMetaData;
         this.mgmtClient = mgmtClient;
     }
 
