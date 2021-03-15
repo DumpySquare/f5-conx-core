@@ -55,6 +55,21 @@
             "protocol": "inspector",
         },
         {
+            "name": "mgmtClient UCS unit tests",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "-r",
+                "ts-node/register",
+                "--no-timeout",
+                "--colors",
+                "${workspaceFolder}/tests/mgmtClient_UCS_unit.tests.ts",
+            ],
+            "internalConsoleOptions": "neverOpen",
+            "protocol": "inspector",
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Mocha F5Device IPv6 integration tests",

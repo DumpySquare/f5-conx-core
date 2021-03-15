@@ -29,9 +29,10 @@ import {
     ipv6Host 
 } from '../src/utils/testingUtils';
 import { getFakeToken } from '../src/utils/testingUtils';
-import localAtcMetadata from '../src/bigip/atc_metadata.old.json';
+// import localAtcMetadata from '../src/bigip/atc_metadata.old.json';
 import { AuthTokenReqBody } from '../src/bigip/bigipModels';
-import { F5DownloadPaths, F5UploadPaths } from '../src/constants';
+import { atcMetaData, F5DownloadPaths, F5UploadPaths } from '../src/constants';
+import Logger from '../src/logger';
 
 
 // test file name
@@ -46,7 +47,10 @@ const tmp = path.join(tmpDir, rpm)
 const nockInst = nock(`https://${ipv6Host}`)
 
 let f5Client: F5Client;
-const events = [];
+// const events = [];
+const log = Logger.getLogger();
+
+log.console = false;
 
 describe('f5Client basic tests - ipv6', function () {
 
@@ -58,16 +62,16 @@ describe('f5Client basic tests - ipv6', function () {
     });
  
     beforeEach(function () {
-        events.length = 0;
+        log.clearLogs();
         
         // setup mgmt client
         f5Client = getF5Client({ ipv6: true });
 
         // setup events collection
-        f5Client.events.on('failedAuth', msg => events.push(msg));
-        f5Client.events.on('log-debug', msg => events.push(msg));
-        f5Client.events.on('log-info', msg => events.push(msg));
-        f5Client.events.on('log-error', msg => events.push(msg));
+        f5Client.events.on('failedAuth', msg => log.error(msg));
+        f5Client.events.on('log-debug', msg => log.debug(msg));
+        f5Client.events.on('log-info', msg => log.info(msg));
+        f5Client.events.on('log-error', msg => log.error(msg));
 
         nockInst
         .post('/mgmt/shared/authn/login')
@@ -87,9 +91,9 @@ describe('f5Client basic tests - ipv6', function () {
 
     it('clear login', async function () {
 
-        await f5Client.clearLogin()
+        const num = await f5Client.clearLogin()
 
-        assert.ok(JSON.stringify(events).includes('clearing token/timer'), 'did not get any test events');
+        assert.ok(JSON.stringify(log.journal).includes('clearing token/timer'), 'did not get any test events');
 
         nock.cleanAll();    // clean all the nocks since we didn't use any
     });  
@@ -113,29 +117,29 @@ describe('f5Client basic tests - ipv6', function () {
             .get('/mgmt/shared/identified-devices/config/device-info')
             .reply(200, deviceInfo)
 
-            .get(localAtcMetadata.components.fast.endpoints.info.uri)
+            .get(atcMetaData.fast.endPoints.info)
             .reply(404, {
-                message: `Public URI path not registered: ${localAtcMetadata.components.fast.endpoints.info.uri}`,
+                message: `Public URI path not registered: ${atcMetaData.fast.endPoints.info}`,
             })
             
-            .get(localAtcMetadata.components.as3.endpoints.info.uri)
+            .get(atcMetaData.as3.endPoints.info)
             .reply(404, {
-                message: `Public URI path not registered: ${localAtcMetadata.components.as3.endpoints.info.uri}`,
+                message: `Public URI path not registered: ${atcMetaData.as3.endPoints.info}`,
             })
             
-            .get(localAtcMetadata.components.do.endpoints.info.uri)
+            .get(atcMetaData.do.endPoints.info)
             .reply(404, {
-                message: `Public URI path not registered: ${localAtcMetadata.components.do.endpoints.info.uri}`,
+                message: `Public URI path not registered: ${atcMetaData.do.endPoints.info}`,
               })
 
-            .get(localAtcMetadata.components.ts.endpoints.info.uri)
+            .get(atcMetaData.ts.endPoints.info)
             .reply(404, {
-                message: `Public URI path not registered: ${localAtcMetadata.components.ts.endpoints.info.uri}`,
+                message: `Public URI path not registered: ${atcMetaData.ts.endPoints.info}`,
               })
 
-            .get(localAtcMetadata.components.cf.endpoints.info.uri)
+            .get(atcMetaData.cf.endPoints.info)
             .reply(404, {
-                message: `Public URI path not registered: ${localAtcMetadata.components.cf.endpoints.info.uri}`,
+                message: `Public URI path not registered: ${atcMetaData.cf.endPoints.info}`,
               })
 
         const resp = await f5Client.discover()
@@ -158,19 +162,19 @@ describe('f5Client basic tests - ipv6', function () {
             .get('/mgmt/shared/identified-devices/config/device-info')
             .reply(200, deviceInfo)
 
-            .get(localAtcMetadata.components.fast.endpoints.info.uri)
+            .get(atcMetaData.fast.endPoints.info)
             .reply(200, fastInfoApiResponse)
             
-            .get(localAtcMetadata.components.as3.endpoints.info.uri)
+            .get(atcMetaData.as3.endPoints.info)
             .reply(200, as3InfoApiReponse)
 
-            .get(localAtcMetadata.components.do.endpoints.info.uri)
+            .get(atcMetaData.do.endPoints.info)
             .reply(200, doInfoApiReponse)
 
-            .get(localAtcMetadata.components.ts.endpoints.info.uri)
+            .get(atcMetaData.ts.endPoints.info)
             .reply(200, tsInfoApiReponse)
 
-            .get(localAtcMetadata.components.cf.endpoints.info.uri)
+            .get(atcMetaData.cf.endPoints.info)
             .reply(200, cfInfoApiReponse)
 
         const resp = await f5Client.discover();

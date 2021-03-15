@@ -76,6 +76,12 @@
 								<li class="tsd-kind-class tsd-parent-kind-module"><a href="../classes/_bigip_mgmtclient_.mgmtclient.html" class="tsd-kind-icon">Mgmt<wbr>Client</a></li>
 							</ul>
 						</section>
+						<section class="tsd-index-section ">
+							<h3>Functions</h3>
+							<ul class="tsd-index-list">
+								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_bigip_mgmtclient_.html#simplifyhttpresponse" class="tsd-kind-icon">simplify<wbr>Http<wbr>Response</a></li>
+							</ul>
+						</section>
 						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Object literals</h3>
 							<ul class="tsd-index-list">
@@ -83,6 +89,56 @@
 							</ul>
 						</section>
 					</div>
+				</section>
+			</section>
+			<section class="tsd-panel-group tsd-member-group ">
+				<h2>Functions</h2>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-module">
+					<a name="simplifyhttpresponse" class="tsd-anchor"></a>
+					<h3>simplify<wbr>Http<wbr>Response</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module">
+						<li class="tsd-signature tsd-kind-icon">simplify<wbr>Http<wbr>Response<span class="tsd-signature-symbol">(</span>resp<span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_httpmodels_.axiosresponsewithtimings.html" class="tsd-signature-type">AxiosResponseWithTimings</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="_utils_httpmodels_.html#httpresponse" class="tsd-signature-type">HttpResponse</a><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/mgmtClient.ts#L653">src/bigip/mgmtClient.ts:653</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>returns simplified http response object</p>
+								</div>
+								<pre><code class="language-ts">    <span class="hljs-keyword">return</span> {
+     <span class="hljs-attr">data</span>: resp.data,
+     <span class="hljs-attr">headers</span>: resp.headers,
+     <span class="hljs-attr">status</span>: resp.status,
+     <span class="hljs-attr">statusText</span>: resp.statusText,
+     <span class="hljs-attr">request</span>: {
+         <span class="hljs-attr">uuid</span>: resp.config.uuid,
+         <span class="hljs-attr">baseURL</span>: resp.config.baseURL,
+         <span class="hljs-attr">url</span>: resp.config.url,
+         <span class="hljs-attr">method</span>: resp.request.method,
+         <span class="hljs-attr">headers</span>: resp.config.headers,
+         <span class="hljs-attr">protocol</span>: resp.config.httpsAgent.protocol,
+         <span class="hljs-attr">timings</span>: resp.request.timings
+     }
+ }</code></pre>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>resp: <a href="../interfaces/_utils_httpmodels_.axiosresponsewithtimings.html" class="tsd-signature-type">AxiosResponseWithTimings</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>orgininal axios response with timing</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="_utils_httpmodels_.html#httpresponse" class="tsd-signature-type">HttpResponse</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>simplified http response</p>
+						</li>
+					</ul>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
@@ -93,7 +149,7 @@
 					<div class="tsd-signature tsd-kind-icon">transport<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/mgmtClient.ts#L30">src/bigip/mgmtClient.ts:30</a></li>
+							<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/mgmtClient.ts#L31">src/bigip/mgmtClient.ts:31</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -116,7 +172,7 @@
 							<li class="tsd-description">
 								<aside class="tsd-sources">
 									<ul>
-										<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/mgmtClient.ts#L31">src/bigip/mgmtClient.ts:31</a></li>
+										<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/mgmtClient.ts#L32">src/bigip/mgmtClient.ts:32</a></li>
 									</ul>
 								</aside>
 								<h4 class="tsd-parameters-title">Parameters</h4>
@@ -148,6 +204,9 @@
 					<li class=" tsd-kind-class tsd-parent-kind-module">
 						<a href="../classes/_bigip_mgmtclient_.mgmtclient.html" class="tsd-kind-icon">Mgmt<wbr>Client</a>
 					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module">
+						<a href="_bigip_mgmtclient_.html#simplifyhttpresponse" class="tsd-kind-icon">simplify<wbr>Http<wbr>Response</a>
+					</li>
 					<li class=" tsd-kind-object-literal tsd-parent-kind-module tsd-is-not-exported">
 						<a href="_bigip_mgmtclient_.html#transport" class="tsd-kind-icon">transport</a>
 					</li>
@@ -164,6 +223,7 @@
 				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
 				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
 				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
 				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
 				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>
 			</ul>

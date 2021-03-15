@@ -97,6 +97,7 @@
 						<section class="tsd-index-section ">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_bigip_as3client_.as3client.html#metadata" class="tsd-kind-icon">meta<wbr>Data</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_bigip_as3client_.as3client.html#mgmtclient" class="tsd-kind-icon">mgmt<wbr>Client</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_bigip_as3client_.as3client.html#targets" class="tsd-kind-icon">targets</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class"><a href="_bigip_as3client_.as3client.html#tenants" class="tsd-kind-icon">tenants</a></li>
@@ -122,19 +123,22 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>As3<wbr>Client<span class="tsd-signature-symbol">(</span>versions<span class="tsd-signature-symbol">: </span><a href="../modules/_bigip_bigipmodels_.html#atcinfo" class="tsd-signature-type">AtcInfo</a>, mgmtClient<span class="tsd-signature-symbol">: </span><a href="_bigip_mgmtclient_.mgmtclient.html" class="tsd-signature-type">MgmtClient</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_bigip_as3client_.as3client.html" class="tsd-signature-type">As3Client</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>As3<wbr>Client<span class="tsd-signature-symbol">(</span>versions<span class="tsd-signature-symbol">: </span><a href="../modules/_bigip_bigipmodels_.html#atcinfo" class="tsd-signature-type">AtcInfo</a>, as3MetaData<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">typeof </span><a href="../modules/_constants_.html#atcmetadata.as3" class="tsd-signature-type">as3</a>, mgmtClient<span class="tsd-signature-symbol">: </span><a href="_bigip_mgmtclient_.mgmtclient.html" class="tsd-signature-type">MgmtClient</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_bigip_as3client_.as3client.html" class="tsd-signature-type">As3Client</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L52">src/bigip/as3Client.ts:52</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L54">src/bigip/as3Client.ts:54</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>versions: <a href="../modules/_bigip_bigipmodels_.html#atcinfo" class="tsd-signature-type">AtcInfo</a></h5>
+								</li>
+								<li>
+									<h5>as3MetaData: <span class="tsd-signature-symbol">typeof </span><a href="../modules/_constants_.html#atcmetadata.as3" class="tsd-signature-type">as3</a></h5>
 								</li>
 								<li>
 									<h5>mgmtClient: <a href="_bigip_mgmtclient_.mgmtclient.html" class="tsd-signature-type">MgmtClient</a></h5>
@@ -148,12 +152,22 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+					<a name="metadata" class="tsd-anchor"></a>
+					<h3>meta<wbr>Data</h3>
+					<div class="tsd-signature tsd-kind-icon">meta<wbr>Data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">typeof </span><a href="../modules/_constants_.html#atcmetadata.as3" class="tsd-signature-type">as3</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L30">src/bigip/as3Client.ts:30</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 					<a name="mgmtclient" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagReadonly">Readonly</span> mgmt<wbr>Client</h3>
 					<div class="tsd-signature tsd-kind-icon">mgmt<wbr>Client<span class="tsd-signature-symbol">:</span> <a href="_bigip_mgmtclient_.mgmtclient.html" class="tsd-signature-type">MgmtClient</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L25">src/bigip/as3Client.ts:25</a></li>
+							<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L25">src/bigip/as3Client.ts:25</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -163,7 +177,7 @@
 					<div class="tsd-signature tsd-kind-icon">targets<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>declaration<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">; </span>id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>label<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>schemaVersion<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>target<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>updateMode<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L36">src/bigip/as3Client.ts:36</a></li>
+							<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L38">src/bigip/as3Client.ts:38</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -178,7 +192,7 @@
 					<div class="tsd-signature tsd-kind-icon">tenants<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>class<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>schemaVersion<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>updateMode<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L47">src/bigip/as3Client.ts:47</a></li>
+							<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L49">src/bigip/as3Client.ts:49</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -193,7 +207,7 @@
 					<div class="tsd-signature tsd-kind-icon">version<span class="tsd-signature-symbol">:</span> <a href="../modules/_bigip_bigipmodels_.html#atcinfo" class="tsd-signature-type">AtcInfo</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L32">src/bigip/as3Client.ts:32</a></li>
+							<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L34">src/bigip/as3Client.ts:34</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -215,7 +229,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L152">src/bigip/as3Client.ts:152</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L156">src/bigip/as3Client.ts:156</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -255,7 +269,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L83">src/bigip/as3Client.ts:83</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L87">src/bigip/as3Client.ts:87</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -295,7 +309,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L67">src/bigip/as3Client.ts:67</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L71">src/bigip/as3Client.ts:71</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -323,7 +337,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L187">src/bigip/as3Client.ts:187</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L191">src/bigip/as3Client.ts:191</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -359,7 +373,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/bigip/as3Client.ts#L112">src/bigip/as3Client.ts:112</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/bigip/as3Client.ts#L116">src/bigip/as3Client.ts:116</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -405,6 +419,9 @@
 								<a href="_bigip_as3client_.as3client.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
+								<a href="_bigip_as3client_.as3client.html#metadata" class="tsd-kind-icon">meta<wbr>Data</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class">
 								<a href="_bigip_as3client_.as3client.html#mgmtclient" class="tsd-kind-icon">mgmt<wbr>Client</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class">
@@ -448,6 +465,7 @@
 				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
 				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
 				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
 				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
 				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>
 			</ul>

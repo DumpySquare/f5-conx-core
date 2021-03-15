@@ -20,7 +20,7 @@ import { AuthTokenReqBody } from '../src/bigip/bigipModels';
 import {  atcMetaData, iControlEndpoints } from '../src/constants';
 import { F5Client } from '../src/bigip/f5Client';
 import { as3InfoApiReponse, deviceInfoIPv6 } from './artifacts/f5_device_atc_infos';
-import localAtcMetadata from '../src/bigip/atc_metadata.old.json';
+// import localAtcMetadata from '../src/bigip/atc_metadata.old.json';
 import { isArray, isObject } from '../src/utils/misc';
 import { as3ExampleDec, as3TargetTens, as3Tasks, as3Tens } from './artifacts/as3Mocks';
 
@@ -57,7 +57,7 @@ describe('as3Client integration tests', function () {
             //discover endpoint
             .get(iControlEndpoints.tmosInfo)
             .reply(200, deviceInfoIPv6)
-            .get(localAtcMetadata.components.as3.endpoints.info.uri)
+            .get(atcMetaData.as3.endPoints.info)
             .reply(200, as3InfoApiReponse)
 
         f5Client = getF5Client({ ipv6: true });

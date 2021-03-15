@@ -77,6 +77,7 @@
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_utils_misc_.html#isarray" class="tsd-kind-icon">is<wbr>Array</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_utils_misc_.html#isobject" class="tsd-kind-icon">is<wbr>Object</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-module"><a href="_utils_misc_.html#verifyhash" class="tsd-kind-icon">verify<wbr>Hash</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter"><a href="_utils_misc_.html#wait" class="tsd-kind-icon">wait</a></li>
 							</ul>
 						</section>
 					</div>
@@ -94,7 +95,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/utils/misc.ts#L24">src/utils/misc.ts:24</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/utils/misc.ts#L35">src/utils/misc.ts:35</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -135,7 +136,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/utils/misc.ts#L60">src/utils/misc.ts:60</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/utils/misc.ts#L71">src/utils/misc.ts:71</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -158,7 +159,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/utils/misc.ts#L53">src/utils/misc.ts:53</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/utils/misc.ts#L64">src/utils/misc.ts:64</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -181,7 +182,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/DumpySquare/f5-conx-core/blob/73df614/src/utils/misc.ts#L73">src/utils/misc.ts:73</a></li>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/utils/misc.ts#L84">src/utils/misc.ts:84</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -203,6 +204,50 @@
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
 							<p>true/false based on hash verification result</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
+					<a name="wait" class="tsd-anchor"></a>
+					<h3>wait</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
+						<li class="tsd-signature tsd-kind-icon">wait&lt;T&gt;<span class="tsd-signature-symbol">(</span>ms<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, value<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/dumpysquare/f5-conx-core/blob/aa16d2c/src/utils/misc.ts#L22">src/utils/misc.ts:22</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>delays async response of function
+									<a href="https://stackoverflow.com/questions/38956121/how-to-add-delay-to-promise-inside-then">https://stackoverflow.com/questions/38956121/how-to-add-delay-to-promise-inside-then</a></p>
+								</div>
+							</div>
+							<h4 class="tsd-type-parameters-title">Type parameters</h4>
+							<ul class="tsd-type-parameters">
+								<li>
+									<h4>T</h4>
+								</li>
+							</ul>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>ms: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>time to wait</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> value: <span class="tsd-signature-type">T</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>value to return</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -233,6 +278,9 @@
 					<li class=" tsd-kind-function tsd-parent-kind-module">
 						<a href="_utils_misc_.html#verifyhash" class="tsd-kind-icon">verify<wbr>Hash</a>
 					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-module tsd-has-type-parameter">
+						<a href="_utils_misc_.html#wait" class="tsd-kind-icon">wait</a>
+					</li>
 				</ul>
 			</nav>
 		</div>
@@ -246,6 +294,7 @@
 				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
 				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
 				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
 				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
 				<li class="tsd-kind-type-alias tsd-has-type-parameter"><span class="tsd-kind-icon">Type alias with type parameter</span></li>
 			</ul>

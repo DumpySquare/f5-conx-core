@@ -47,7 +47,9 @@ describe('atc versions unit tests', function () {
             .reply(200, cfResp)
 
         const extHttp = new ExtHttp();
-        const atcV = new AtcVersionsClient(extHttp);
+        const atcV = new AtcVersionsClient({
+            extHttp,
+        });
 
         atcV.events.on('log-debug', msg => events.push(msg));
         atcV.events.on('log-info', msg => events.push(msg));
