@@ -13,7 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import { EventEmitter } from 'events';
 
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosProxyConfig, AxiosRequestConfig } from 'axios';
 import timer from '@szmarczak/http-timer/dist/source';
 
 import { HttpResponse, uuidAxiosRequestConfig, AxiosResponseWithTimings } from "./utils/httpModels";
@@ -45,10 +45,32 @@ interface extRegCfg extends uuidAxiosRequestConfig {
  * @constructor options.rejectUnauthorized - set to false to allow self-signed certs (default true)
  */
 export class ExtHttp {
+    /**
+     * http user agent to identify connections
+     * 
+     * set via process.env.F5_CONX_CORE_EXT_HTTP_AGENT 
+     * 
+     * default => 'F5 Conx Core'
+     */
     userAgent: string;
+    /**
+     * event emitter instance
+     */
     events: EventEmitter;
+    /**
+     * axios instance for making all external https calls
+     */
     private axios: AxiosInstance;
+    /**
+     * cache directory for default download directory
+     */
     cacheDir: string;
+    /**
+     * external https proxy configuration settings, based on axios proxy config
+     * # in dev
+     */
+    proxy: AxiosProxyConfig | undefined;
+
     constructor(options?: {
         rejectUnauthorized?: boolean,
         eventEmitter?: EventEmitter

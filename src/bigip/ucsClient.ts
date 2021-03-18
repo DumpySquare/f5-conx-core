@@ -283,6 +283,18 @@ export class UcsClient {
         // this will check the folder every time
         return await this._mgmtClient.makeRequest(iControlEndpoints.ucs)
     }
+
+
+
+    /**
+     * delete ucs file on f5
+     * @param archive_name.ucs
+     */
+    async delete(name: string): Promise<HttpResponse> {
+        return await this._mgmtClient.makeRequest(`${iControlEndpoints.ucs}/${name}`, {
+            method: 'DELETE'
+        })
+    }
 }
 
 

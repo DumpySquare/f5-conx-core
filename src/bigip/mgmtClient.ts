@@ -42,23 +42,75 @@ const transport = {
  * F5 connectivity mgmt client
  * 
  * @param host
- * @param port
  * @param user
- * @param options.password
- * @param options.provider
+ * @param password
+ * @param options.port (default = 443)
+ * @param options.provider (default = tmos)
  * 
  */
 export class MgmtClient {
+    /**
+     * hostname or IP address of F5 device
+     */
     host: string;
+    /**
+     * tcp port for mgmt connectivity (default=443)
+     */
     port: number;
+    /**
+     * F5 Device host information api output from
+     * 
+     * '/mgmt/shared/identified-devices/config/device-info'
+     * 
+     * Used to understand details of connected device
+     */
     hostInfo: F5InfoApi | undefined;
+    /**
+     * event emitter instance for all events related to this class
+     * 
+     * typically passed in from parent F5Client class
+     */
     events: EventEmitter;
+    /**
+     * custom axsios instance for making calls to the connect F5 device
+     * 
+     * managed authentication/token
+     */
     axios: AxiosInstance;
+    /**
+     * username for connected f5 device
+     */
     protected _user: string;
+    /**
+     * password for connected device
+     */
     protected _password: string;
+    /**
+     * authentication provider for connected device
+     */
     protected _provider: string;
+    /**
+     * full auth token details for connected device
+     * 
+     * **this gets cleared and refreshed as needed**
+     * 
+     * **check out the auth token events for active otken feedback**
+     */
     protected _token: Token | undefined;
-    protected _tokenTimeout: number | undefined;
+    /**
+     * token timer value
+     * 
+     * Starts when a token is refreshed, start value is token time out
+     * 
+     * An asyncronous timer counts down till zero
+     * 
+     */
+    tokenTimeout: number | undefined;
+    /**
+     * system interval id for the async token timer
+     * 
+     * **pre-emptivly clears token at <10 seconds but keeps counting to zero**
+     */
     protected _tokenIntervalId: NodeJS.Timeout | undefined;
 
 
@@ -98,15 +150,19 @@ export class MgmtClient {
      *  - used for logging out/disconnecting, and testing
      */
     async clearToken(): Promise<number> {
-        this.events.emit('log-info', `clearing token/timer with ${this._tokenTimeout} left`);
-        const tokenTimeOut = this._tokenTimeout;
+        this.events.emit('log-info', `clearing token/timer with ${this.tokenTimeout} left`);
+        const tokenTimeOut = this.tokenTimeout;
         this._token = undefined;
         clearInterval(this._tokenIntervalId);
         return tokenTimeOut;
     }
 
+    /**
+     * creates the axios instance that will be used for all f5 calls
+     * 
+     * includes auth/token management
+     */
     private createAxiosInstance(): AxiosInstance {
-
 
         const baseInstanceParams: uuidAxiosRequestConfig = {
             baseURL: `https://${this.host}:${this.port}`,
@@ -195,9 +251,9 @@ export class MgmtClient {
                 // capture entire token
                 this._token = resp.data['token'];
                 // set token timeout for timer
-                this._tokenTimeout = resp.data.token.timeout;
+                this.tokenTimeout = resp.data.token.timeout;
 
-                this.events.emit('log-debug', `auth token aquired, timeout: ${this._tokenTimeout}`);
+                this.events.emit('log-debug', `auth token aquired, timeout: ${this.tokenTimeout}`);
 
                 this.tokenTimer();  // start token timer
 
@@ -261,19 +317,23 @@ export class MgmtClient {
      */
     private async tokenTimer(): Promise<void> {
 
-        this.events.emit('log-debug', `Starting token timer: ${this._tokenTimeout}`);
+        this.events.emit('token-timer-start', `Starting token timer: ${this.tokenTimeout}`);
 
         this._tokenIntervalId = setInterval(() => {
-            this._tokenTimeout--;
+            this.tokenTimeout--;
 
             // todo: add event to emit timer countdown
-            this.events.emit('token-timer', this._tokenTimeout);
+            this.events.emit('token-timer-count', this.tokenTimeout);
 
             // kill the token 10 seconds early to give us time to get a new one with all the other calls going on
-            if (this._tokenTimeout <= 10) {
-                clearInterval(this._tokenIntervalId);
+            if (this.tokenTimeout <= 10) {
                 this._token = undefined; // clearing token details should get a new token
-                this.events.emit('log-debug', 'authToken expired -> will refresh with next HTTPS call');
+            }
+            
+            // keep running the timer so everything looks good, but clear the rest when it reaches 0
+            if (this.tokenTimeout <= 0) {
+                clearInterval(this._tokenIntervalId);
+                this.events.emit('token-timer-expired', 'authToken expired -> will refresh with next HTTPS call');
             }
             // run timer a little fast to pre-empt update
         }, 999);
@@ -608,7 +668,8 @@ export class MgmtClient {
             const cleanISOdateTime = new Date().toISOString().replace(/(:|\.|-)/g, '')
 
             // if mgmtIP is IPv6 format - make it filename friendly
-            if (/\[[\w:]+\]/.test(this.hostInfo.managementAddress)) {
+            // if (/\[[\w:]+\]/.test(this.hostInfo.managementAddress)) {
+            if (/:/.test(this.hostInfo.managementAddress)) {
 
                 const removedBrackets = this.hostInfo.managementAddress.replace(/\[|\]/g, '')
                 const flat = removedBrackets.replace(/:/g, '.')

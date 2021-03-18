@@ -49,19 +49,76 @@ import path from 'path';
  * ```
 */
 export class F5Client {
-    protected mgmtClient: MgmtClient;
+    /**
+     * core f5 mgmt client for making all F5 device calls
+     */
+    mgmtClient: MgmtClient;
+    /**
+     * ATC meta data including:
+     *  * service endpoint information /info/declare/tasks
+     *  * github releases url
+     *  * github main repo url
+     */
     atcMetaData = atcMetaDataNew;
+    /**
+     * ### file cache directory
+     * 
+     * This can be set via environment var or set after instantiation
+     * 
+     * default is "/f5_cache"
+     */
     cacheDir: string;
+    /**
+     * F5 Device host information api output from
+     * 
+     * '/mgmt/shared/identified-devices/config/device-info'
+     * 
+     * Used to understand details of connected device
+     * 
+     * Same as mgmtClient class
+     */
     host: F5InfoApi | undefined;
+    /**
+     * atc mgmt class for managing f5 automated toolchain packages
+     */
     atc: AtcMgmtClient;
+    /**
+     * f5 ucs client for managing create/delete/download operations of UCS files on f5 device
+     */
     ucs: UcsClient;
+    /**
+     * f5 qkview client for managing create/delete/download operations of qkview files on f5 device
+     */
     qkview: QkviewClient;
+    /**
+     * extenal http client used for making calls to everything but the connected device
+     * 
+     * This is used for fetching information from services like github
+     */
     extHttp: ExtHttp;
+    /**
+     * connectivity client for interacting with the FAST service
+     */
     fast: FastClient | undefined;
+    /**
+     * connectivity client for interacting with AS3
+     */
     as3: As3Client | undefined;
+    /**
+     * connectivity client for interacting with DO (declarative onboarding)
+     */
     do: DoClient | undefined;
+    /**
+     * connectivity client for interacting with TS (telemetry streaming)
+     */
     ts: TsClient | undefined;
+    /**
+     * connectivity client for interacting with TS (telemetry streaming)
+     */
     cf: CfClient | undefined;
+    /**
+     * event emitter instance
+     */
     events: EventEmitter;
 
     constructor(
@@ -88,7 +145,7 @@ export class F5Client {
         this.events = eventEmmiter ? eventEmmiter : new EventEmitter();
 
         // setup external http class (feed it the events instance)
-        this.extHttp = extHttp ? extHttp : new ExtHttp({ 
+        this.extHttp = extHttp ? extHttp : new ExtHttp({
             eventEmitter: this.events,
         });
 
@@ -100,11 +157,11 @@ export class F5Client {
 
         // setup atc rpm ilx mgmt
         this.atc = new AtcMgmtClient(this.mgmtClient, this.extHttp)
-        
+
     }
 
 
-    
+
     /**
      * clear auth token
      *  - mainly for unit tests...
@@ -160,7 +217,6 @@ export class F5Client {
             })
 
 
-            this.atcMetaData.fast.endPoints.info
         // check FAST installed by getting verion info
         await this.mgmtClient.makeRequest(this.atcMetaData.fast.endPoints.info)
             .then(resp => {
