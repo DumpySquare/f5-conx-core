@@ -285,7 +285,7 @@ export type F5InfoApi = {
     address: string;
     hostname: string;
     version: string;
-    product: string;
+    product: 'BIG-IP' | 'BIG-IQ';
     platformMarketingName: string;
     edition: string;
     build: string;

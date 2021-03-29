@@ -334,6 +334,7 @@ export class MgmtClient {
             if (this.tokenTimeout <= 0) {
                 clearInterval(this._tokenIntervalId);
                 this.events.emit('token-timer-expired', 'authToken expired -> will refresh with next HTTPS call');
+                this.clearToken();
             }
             // run timer a little fast to pre-empt update
         }, 999);

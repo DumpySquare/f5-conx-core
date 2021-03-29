@@ -43,10 +43,13 @@ export enum LogLevel {
  * ```
  */
 export default class Logger {
+    /**
+     * journal array of log messages
+     */
     readonly journal = [];
 
     /**
-     * buffer log messages
+     * buffer log messages in the journal
      * @default true
      */
     buffer = true;
@@ -63,8 +66,6 @@ export default class Logger {
     /**
      * Get logger instance (singleton)
      * 
-     * @param options.buffer enable/disable buffering
-     * @param options.console enable/disable output to console.log
      * @returns logger instance
      */
     static getLogger(): Logger {
