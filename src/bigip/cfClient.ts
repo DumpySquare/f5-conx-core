@@ -12,6 +12,7 @@
 import { AtcInfo } from "./bigipModels";
 import { atcMetaData } from '../constants';
 import { MgmtClient } from "./mgmtClient";
+import { AxiosResponseWithTimings } from "../utils/httpModels";
 
 
 export class CfClient {
@@ -30,19 +31,23 @@ export class CfClient {
     }
 
 
-    // async get(): Promise<string> {
-    //     return 'cf-get';
-    // }
+    async inspect(): Promise<AxiosResponseWithTimings> {
+        return await this.mgmtClient.makeRequest(this.metaData.endPoints.inspect);
+        // return 'cf-inspect';
+    }
 
-    // async post(): Promise<string> {
-    //     return 'cf-post';
-    // }
+    async declare(): Promise<AxiosResponseWithTimings> {
+        return await this.mgmtClient.makeRequest(this.metaData.endPoints.declare);
+        // return 'cf-deplare';
+    }
 
-    // async patch(): Promise<string> {
-    //     return 'cf-patch';
-    // }
+    async trigger(): Promise<AxiosResponseWithTimings> {
+        return await this.mgmtClient.makeRequest(this.metaData.endPoints.trigger);
+        // return 'cf-trigger';
+    }
 
-    // async remove(): Promise<string> {
-    //     return 'cf-remove';
-    // }
+    async reset(): Promise<AxiosResponseWithTimings> {
+        return await this.mgmtClient.makeRequest(this.metaData.endPoints.reset);
+        // return 'cf-reset';
+    }
 }
