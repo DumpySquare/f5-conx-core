@@ -22,6 +22,10 @@ describe('Logger Class Unit Tests', function () {
     before(function () {
         logger = Logger.getLogger();
 
+        // re-set the defaults
+        logger.console = true;
+        logger.buffer = true;
+
         // capture current log envs
         envs.push(...Object.entries(process.env)
         .filter( el => el[0].startsWith('F5_CONX_CORE_LOG_') ));

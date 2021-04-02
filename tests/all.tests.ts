@@ -31,6 +31,9 @@ process.env.F5_CONX_CORE_LOG_LEVEL = "debug"
 process.env.F5_CONX_CORE_LOG_BUFFER = "true"
 process.env.F5_CONX_CORE_LOG_CONSOLE = "false"
 
+// removes conflict from vscode-f5 developement
+delete process.env.F5_CONX_CORE_EXT_HTTP_AGENT;
+
 // unit test example logger class
 require('./logger.unit.tests')
 

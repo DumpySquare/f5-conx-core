@@ -167,7 +167,7 @@ export class F5Client {
      *  - mainly for unit tests...
      */
     async clearLogin(): Promise<number> {
-        return this.mgmtClient.clearToken();
+        return await this.mgmtClient.clearToken();
     }
 
 

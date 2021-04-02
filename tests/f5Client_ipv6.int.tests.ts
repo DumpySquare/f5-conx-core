@@ -52,7 +52,7 @@ const log = Logger.getLogger();
 
 log.console = false;
 
-describe('f5Client basic tests - ipv6', function () {
+describe('f5Client basic tests - ipv6', async function () {
 
     before(function () {
         if (!fs.existsSync(tmpDir)) {
@@ -61,16 +61,23 @@ describe('f5Client basic tests - ipv6', function () {
         }
     });
  
-    beforeEach(function () {
-        log.clearLogs();
+    beforeEach( async () => {
+        // log.clearLogs();
         
         // setup mgmt client
         f5Client = getF5Client({ ipv6: true });
 
+        // f5Client.events.on('failedAuth', msg => events.push(msg));
+        // f5Client.events.on('log-debug', msg => events.push(msg));
+        // f5Client.events.on('log-info', msg => events.push(msg));
+        // f5Client.events.on('log-error', msg => events.push(msg));
+
         // setup events collection
         f5Client.events.on('failedAuth', msg => log.error(msg));
         f5Client.events.on('log-debug', msg => log.debug(msg));
-        f5Client.events.on('log-info', msg => log.info(msg));
+        f5Client.events.on('log-info', async msg => {
+            log.info(msg)
+        });
         f5Client.events.on('log-error', msg => log.error(msg));
 
         nockInst
@@ -89,14 +96,7 @@ describe('f5Client basic tests - ipv6', function () {
     });
 
 
-    it('clear login', async function () {
 
-        const num = await f5Client.clearLogin()
-
-        assert.ok(JSON.stringify(log.journal).includes('clearing token/timer'), 'did not get any test events');
-
-        nock.cleanAll();    // clean all the nocks since we didn't use any
-    });  
 
 
     it('should make basic request (https) - additional mgmt client params', async function () {
@@ -109,6 +109,17 @@ describe('f5Client basic tests - ipv6', function () {
         assert.deepStrictEqual(resp.data, { foo: 'bar' })
         await f5Client.clearLogin();
     });
+
+    // it('clear login', async function () {
+    //     // log.clearLogs();
+
+    //     const num = await f5Client.clearLogin()
+
+    //     const x = log.journal[log.journal.length - 1]
+    //     assert.ok(JSON.stringify(x).includes('clearing token/timer'), 'did not get any test events');
+
+    //     nock.cleanAll();    // clean all the nocks since we didn't use any
+    // });  
 
 
     it('discovery - nothing installed', async function () {

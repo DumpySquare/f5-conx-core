@@ -137,8 +137,8 @@ export default class Logger {
 
 
 
-    /** base log function
-     * 
+    /** 
+     * base log function
      */
     log(level: logLevels, ...messageParts: unknown[]): void {
 
