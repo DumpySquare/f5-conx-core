@@ -36,8 +36,29 @@ const constants_1 = require("../constants");
  */
 class AtcMgmtClient {
     constructor(mgmtClient, extHttp) {
+        this.isBigiq = false;
         this.mgmtClient = mgmtClient;
         this.extHttp = extHttp;
+    }
+    morphBigiq() {
+        // if bigiq, update functions to support the different work flow
+        if (this.mgmtClient.hostInfo.product === 'BIG-IQ') {
+            // not bigiq, so don't apply any updates
+            // return;
+            this.isBigiq = true;
+            // after upload move rpm here
+            // ls -l /usr/lib/dco/packages/f5-appsvcs/
+            // remount for update
+            // mount -o remount,rw /usr
+            // copy package into directory
+            // cp /shared/tmp/f5-appsvcs-3.24.0-5.noarch.rpm /usr/lib/dco/packages/f5-appsvcs/
+            // mount back to ro
+            // mount -o remount,ro /usr
+            // update package cmd
+            // rpm -Uv /usr/lib/dco/packages/f5-appsvcs/f5-appsvcs-3.24.0-5.noarch.rpm
+            // restart services
+            // tmsh restart /sys service restjavad restnoded
+        }
     }
     /**
      * download file from external web location

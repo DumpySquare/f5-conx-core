@@ -230,11 +230,10 @@ class UcsClient {
     }
     /**
      * delete ucs file on f5
-     * @param /mgmt/tm/sys/ucs/archive_name
+     * @param archive_name.ucs
      */
     delete(name) {
         return __awaiter(this, void 0, void 0, function* () {
-            // this will check the folder every time
             return yield this._mgmtClient.makeRequest(`${constants_1.iControlEndpoints.ucs}/${name}`, {
                 method: 'DELETE'
             });

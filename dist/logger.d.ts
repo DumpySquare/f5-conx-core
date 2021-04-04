@@ -2,12 +2,6 @@
  * logLevel definitions
  */
 export declare type logLevels = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR';
-export declare enum LogLevel {
-    Debug = 0,
-    Info = 1,
-    Warn = 2,
-    Error = 3
-}
 /**
  *
  * Basic Example:
@@ -17,9 +11,16 @@ export declare enum LogLevel {
  * ```
  */
 export default class Logger {
+    /**
+     * journal array of log messages
+     */
     readonly journal: any[];
     /**
-     * buffer log messages
+     * log level
+     */
+    logLevel: logLevels;
+    /**
+     * buffer log messages in the journal
      * @default true
      */
     buffer: boolean;
@@ -29,11 +30,10 @@ export default class Logger {
      */
     console: boolean;
     private static instance;
+    constructor();
     /**
      * Get logger instance (singleton)
      *
-     * @param options.buffer enable/disable buffering
-     * @param options.console enable/disable output to console.log
      * @returns logger instance
      */
     static getLogger(): Logger;
@@ -62,8 +62,8 @@ export default class Logger {
      * Log error message
      */
     error(...msg: [unknown, ...unknown[]]): void;
-    /** base log function
-     *
+    /**
+     * base log function
      */
     log(level: logLevels, ...messageParts: unknown[]): void;
     private _checkLogLevel;

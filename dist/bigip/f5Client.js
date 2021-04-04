@@ -82,7 +82,7 @@ class F5Client {
      */
     clearLogin() {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.mgmtClient.clearToken();
+            return yield this.mgmtClient.clearToken();
         });
     }
     /**

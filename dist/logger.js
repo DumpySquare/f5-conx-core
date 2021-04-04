@@ -7,7 +7,6 @@
  */
 'use strict';
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LogLevel = void 0;
 const util_1 = require("util");
 const LOG_LEVELS = {
     error: 3,
@@ -15,13 +14,12 @@ const LOG_LEVELS = {
     info: 6,
     debug: 7
 };
-var LogLevel;
-(function (LogLevel) {
-    LogLevel[LogLevel["Debug"] = 0] = "Debug";
-    LogLevel[LogLevel["Info"] = 1] = "Info";
-    LogLevel[LogLevel["Warn"] = 2] = "Warn";
-    LogLevel[LogLevel["Error"] = 3] = "Error";
-})(LogLevel = exports.LogLevel || (exports.LogLevel = {}));
+// export enum LogLevel {
+//     Debug,
+//     Info,
+//     Warn,
+//     Error,
+// }
 // levels have been updated to allign better with typical syslog
 // https://support.solarwinds.com/SuccessCenter/s/article/Syslog-Severity-levels?language=en_US
 /**
@@ -34,9 +32,12 @@ var LogLevel;
  */
 class Logger {
     constructor() {
+        /**
+         * journal array of log messages
+         */
         this.journal = [];
         /**
-         * buffer log messages
+         * buffer log messages in the journal
          * @default true
          */
         this.buffer = true;
@@ -56,12 +57,12 @@ class Logger {
             // I guess we could have just emitted an event...
             // but, this function method could be modified to allow formatting changes
         };
+        // set the log level during instantiation
+        this.logLevel = process.env.F5_CONX_CORE_LOG_LEVEL || 'INFO';
     }
     /**
      * Get logger instance (singleton)
      *
-     * @param options.buffer enable/disable buffering
-     * @param options.console enable/disable output to console.log
      * @returns logger instance
      */
     static getLogger() {
@@ -109,8 +110,8 @@ class Logger {
         // all error messages get logged...
         this.log('ERROR', ...msg);
     }
-    /** base log function
-     *
+    /**
+     * base log function
      */
     log(level, ...messageParts) {
         // join all the log message parts
@@ -131,17 +132,19 @@ class Logger {
     }
     _checkLogLevel() {
         const logLevels = Object.keys(LOG_LEVELS);
-        const logLevelFromEnvVar = process.env.F5_CONX_CORE_LOG_LEVEL;
+        // const logLevelFromEnvVar = process.env.F5_CONX_CORE_LOG_LEVEL || 'info';
+        // check/update log level with every log
+        this.logLevel = process.env.F5_CONX_CORE_LOG_LEVEL || 'INFO';
         if (process.env.F5_CONX_CORE_LOG_BUFFER) {
             this.buffer = (process.env.F5_CONX_CORE_LOG_BUFFER == 'true');
         }
         if (process.env.F5_CONX_CORE_LOG_CONSOLE) {
             this.console = (process.env.F5_CONX_CORE_LOG_CONSOLE == 'true');
         }
-        if (logLevelFromEnvVar && logLevels.includes(logLevelFromEnvVar.toLowerCase())) {
-            return logLevelFromEnvVar.toLowerCase();
+        if (this.logLevel && logLevels.includes(this.logLevel.toUpperCase())) {
+            return this.logLevel.toUpperCase();
         }
-        return 'info';
+        return 'INFO';
     }
     stringify(val) {
         if (typeof val === 'string') {
@@ -149,7 +152,7 @@ class Logger {
         }
         return util_1.inspect(val, {
             colors: false,
-            depth: 6,
+            depth: 6, // heuristic
         });
     }
 }

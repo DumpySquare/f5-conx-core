@@ -18,3 +18,4 @@ f5_cache/
 tests/localTestDevice.ts
 # local env file
 .env
+tests/tmp/*

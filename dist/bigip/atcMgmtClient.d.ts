@@ -15,7 +15,9 @@ import { ExtHttp } from '../externalHttps';
 export declare class AtcMgmtClient {
     readonly mgmtClient: MgmtClient;
     readonly extHttp: ExtHttp;
+    isBigiq: boolean;
     constructor(mgmtClient: MgmtClient, extHttp: ExtHttp);
+    private morphBigiq;
     /**
      * download file from external web location
      * - should be rpm files and rsa signatures

@@ -51,7 +51,7 @@ export declare class UcsClient {
     list(): Promise<HttpResponse>;
     /**
      * delete ucs file on f5
-     * @param /mgmt/tm/sys/ucs/archive_name
+     * @param archive_name.ucs
      */
     delete(name: string): Promise<HttpResponse>;
 }

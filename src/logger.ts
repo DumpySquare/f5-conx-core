@@ -23,12 +23,12 @@ const LOG_LEVELS = {
  */
 export type logLevels = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR'
 
-export enum LogLevel {
-    Debug,
-    Info,
-    Warn,
-    Error,
-}
+// export enum LogLevel {
+//     Debug,
+//     Info,
+//     Warn,
+//     Error,
+// }
 
 
 // levels have been updated to allign better with typical syslog
@@ -49,6 +49,11 @@ export default class Logger {
     readonly journal = [];
 
     /**
+     * log level
+     */
+    logLevel: logLevels;
+
+    /**
      * buffer log messages in the journal
      * @default true
      */
@@ -61,6 +66,11 @@ export default class Logger {
     console = true;
 
     private static instance: Logger;
+
+    constructor() {
+        // set the log level during instantiation
+        this.logLevel = process.env.F5_CONX_CORE_LOG_LEVEL as unknown as logLevels || 'INFO';
+    }
 
 
     /**
@@ -171,8 +181,10 @@ export default class Logger {
 
     private _checkLogLevel(): string {
         const logLevels = Object.keys(LOG_LEVELS);
-        const logLevelFromEnvVar = process.env.F5_CONX_CORE_LOG_LEVEL;
-
+        // const logLevelFromEnvVar = process.env.F5_CONX_CORE_LOG_LEVEL || 'info';
+        
+        // check/update log level with every log
+        this.logLevel = process.env.F5_CONX_CORE_LOG_LEVEL as unknown as logLevels || 'INFO';
         
         if(process.env.F5_CONX_CORE_LOG_BUFFER){
             this.buffer = (process.env.F5_CONX_CORE_LOG_BUFFER == 'true');
@@ -182,11 +194,11 @@ export default class Logger {
             this.console = (process.env.F5_CONX_CORE_LOG_CONSOLE == 'true');
         }
 
-        if (logLevelFromEnvVar && logLevels.includes(logLevelFromEnvVar.toLowerCase())) {
-            return logLevelFromEnvVar.toLowerCase();
+        if (this.logLevel && logLevels.includes(this.logLevel.toUpperCase())) {
+            return this.logLevel.toUpperCase();
         }
         
-        return 'info';
+        return 'INFO';
 
     }
 

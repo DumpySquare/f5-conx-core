@@ -110,11 +110,16 @@ class MgmtClient {
     createAxiosInstance() {
         const baseInstanceParams = {
             baseURL: `https://${this.host}:${this.port}`,
-            httpsAgent: new https_1.default.Agent({
-                rejectUnauthorized: false,
-            }),
             transport
         };
+        // if rejectUnauthorized => false, allow self signed certs
+        if (!this.rejectUnauthorized) {
+            baseInstanceParams.httpsAgent = new https_1.default.Agent({
+                rejectUnauthorized: false,
+            });
+            // disable node rejection of unsigned certs
+            process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+        }
         // create axsios instance
         const axInstance = axios_1.default.create(baseInstanceParams);
         // re-assign parent this objects needed within the parent instance objects...
@@ -225,9 +230,12 @@ class MgmtClient {
     tokenTimer() {
         return __awaiter(this, void 0, void 0, function* () {
             this.events.emit('token-timer-start', `Starting token timer: ${this.tokenTimeout}`);
+            // clear any timer we are currently tracking
+            clearInterval(this._tokenIntervalId);
             this._tokenIntervalId = setInterval(() => {
                 this.tokenTimeout--;
-                // todo: add event to emit timer countdown
+                // capture the self timer instance
+                const timerId = this._tokenIntervalId;
                 this.events.emit('token-timer-count', this.tokenTimeout);
                 // kill the token 10 seconds early to give us time to get a new one with all the other calls going on
                 if (this.tokenTimeout <= 10) {
@@ -236,10 +244,12 @@ class MgmtClient {
                 // keep running the timer so everything looks good, but clear the rest when it reaches 0
                 if (this.tokenTimeout <= 0) {
                     clearInterval(this._tokenIntervalId);
+                    // just in case this timer got orphaned from the main class, also clear using self reference
+                    clearInterval(timerId);
                     this.events.emit('token-timer-expired', 'authToken expired -> will refresh with next HTTPS call');
+                    // this.clearToken();
                 }
-                // run timer a little fast to pre-empt update
-            }, 999);
+            }, 1000);
         });
     }
     followAsync(url) {

@@ -78,6 +78,10 @@ export declare class MgmtClient {
      */
     protected _tokenIntervalId: NodeJS.Timeout | undefined;
     /**
+     * reject self signed certs (default=true)
+     */
+    rejectUnauthorized: true;
+    /**
      * @param options function options
      */
     constructor(host: string, user: string, password: string, options?: {
