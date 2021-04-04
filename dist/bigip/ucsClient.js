@@ -107,7 +107,8 @@ class UcsClient {
                     'config/low_profile_base.conf',
                     'config/user_alert.conf',
                     'config/bigip.license',
-                    'config/partitions'
+                    'config/partitions',
+                    '/config/filestore/files_d'
                 ];
                 // /**
                 //  * sometime, not all the files are there, so it will toss errors, but still create the tar with the files it does find
