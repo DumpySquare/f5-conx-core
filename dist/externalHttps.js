@@ -90,7 +90,8 @@ class ExtHttp {
             // adjust tcp timeout, default=0, which relys on host system
             config.timeout = Number(process.env.F5_CONX_CORE_TCP_TIMEOUT);
             config.uuid = (config === null || config === void 0 ? void 0 : config.uuid) ? config.uuid : misc_1.getRandomUUID(4, { simple: true });
-            events.emit('log-info', `EXTERNAL-HTTPS-REQU [${config.uuid}]: ${config.method} -> ${config.url}`);
+            // events.emit('log-info', `EXTERNAL-HTTPS-REQU [${config.uuid}]: ${config.method} -> ${config.url}`)
+            events.emit('log-http-request', config);
             return config;
         }, function (err) {
             // Do something with request error
@@ -101,7 +102,8 @@ class ExtHttp {
         axInstance.interceptors.response.use(function (resp) {
             // Any status code that lie within the range of 2xx cause this function to trigger
             // Do something with response data
-            events.emit('log-info', `EXTERNAL-HTTPS-RESP [${resp.config.uuid}]: ${resp.status} - ${resp.statusText}`);
+            // events.emit('log-info', `EXTERNAL-HTTPS-RESP [${resp.config.uuid}]: ${resp.status} - ${resp.statusText}`);
+            events.emit('log-http-response', resp);
             return resp;
         }, function (err) {
             // Any status codes that falls outside the range of 2xx cause this function to trigger

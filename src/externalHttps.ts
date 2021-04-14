@@ -138,7 +138,8 @@ export class ExtHttp {
 
             config.uuid = config?.uuid ? config.uuid : getRandomUUID(4, { simple: true })
 
-            events.emit('log-info', `EXTERNAL-HTTPS-REQU [${config.uuid}]: ${config.method} -> ${config.url}`)
+            // events.emit('log-info', `EXTERNAL-HTTPS-REQU [${config.uuid}]: ${config.method} -> ${config.url}`)
+            events.emit('log-http-request', config);
 
             return config;
         }, function (err) {
@@ -153,9 +154,8 @@ export class ExtHttp {
             // Any status code that lie within the range of 2xx cause this function to trigger
             // Do something with response data
 
-            events.emit('log-info', `EXTERNAL-HTTPS-RESP [${resp.config.uuid}]: ${resp.status} - ${resp.statusText}`);
-
-
+            // events.emit('log-info', `EXTERNAL-HTTPS-RESP [${resp.config.uuid}]: ${resp.status} - ${resp.statusText}`);
+            events.emit('log-http-response', resp);
 
             return resp;
         }, function (err) {
