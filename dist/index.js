@@ -16,12 +16,17 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
 var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Logger = void 0;
+const logger_1 = __importDefault(require("./logger"));
+exports.Logger = logger_1.default;
 __exportStar(require("./utils/httpModels"), exports);
 __exportStar(require("./externalHttps"), exports);
 __exportStar(require("./iHealthClient"), exports);
 __exportStar(require("./constants"), exports);
-__exportStar(require("./logger"), exports);
 __exportStar(require("./bigip/bigipModels"), exports);
 __exportStar(require("./utils/misc"), exports);
 __exportStar(require("./utils/testingUtils"), exports);
