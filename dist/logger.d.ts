@@ -1,3 +1,4 @@
+import { AxiosResponseWithTimings, uuidAxiosRequestConfig } from './utils/httpModels';
 /**
  * logLevel definitions
  */
@@ -5,6 +6,19 @@ export declare type logLevels = 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR';
 /**
  *
  * Basic Example:
+ *
+ * ```ts
+ * // set logging to debug
+ * process.env.F5_CONX_CORE_LOG_LEVEL = 'DEBUG';
+ * // create OUTPUT channel
+ * const f5OutputChannel = window.createOutputChannel('nginx');
+ * // make visible
+ * f5OutputChannel.show();
+ * // inject vscode output into logger
+ * logger.output = function (log: string) {
+ *     f5OutputChannel.appendLine(log);
+ * };
+ * ```
  *
  * ```bash
  * export F5_CONX_CORE_LOG_LEVEL='DEBUG'
@@ -32,6 +46,24 @@ export default class Logger {
     private static instance;
     constructor();
     /**
+     *
+     * log http request information depending on env logging level (info/debug)
+     *
+     * ex. process.env.F5_CONX_CORE_LOG_LEVEL === 'INFO/DEBUG'
+     *
+     * @param config
+     */
+    httpRequest(config: uuidAxiosRequestConfig): Promise<void>;
+    /**
+     *
+     * log http response information depending on env logging level (info/debug)
+     *
+     * ex. process.env.F5_CONX_CORE_LOG_LEVEL === 'INFO/DEBUG'
+     *
+     * @param resp
+     */
+    httpResponse(resp: AxiosResponseWithTimings): Promise<void>;
+    /**
      * Get logger instance (singleton)
      *
      * @returns logger instance
@@ -43,6 +75,13 @@ export default class Logger {
     clearLogs(): number;
     /**
      * overwritable function to allow additional output integrations
+     *
+     * ```ts
+     * // inject vscode output into logger
+     * logger.output = function (log: string) {
+     *     f5OutputChannel.appendLine(log);
+     * };
+     * ```
      * @param x log message
      */
     output: (x: string) => void;
