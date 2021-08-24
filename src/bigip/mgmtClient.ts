@@ -253,6 +253,9 @@ export class MgmtClient {
         return await this.axios({
             url: '/mgmt/shared/authn/login',
             method: 'POST',
+            headers: {
+                'testheadername': 'testheadervalue'
+            },
             data: {
                 username: this._user,
                 password: this._password,
