@@ -1,3 +1,5 @@
+# **This project has moved to: https://github.com/f5devcentral/f5-conx-core**
+
 # Welcome to f5-conx-core
 
 f5-conx-core is a project to abstract all the API functionality developed for the vscode-f5 extension to be used in other projects.
